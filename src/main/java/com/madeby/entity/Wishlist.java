@@ -27,5 +27,5 @@ public class Wishlist extends Timestamped{
             joinColumns = @JoinColumn(name = "wishlist_id"),
             inverseJoinColumns = @JoinColumn(name = "product_id")
     )
-    private List<Product> products = new ArrayList<>();
+    private List<Products> products = new ArrayList<>();
 }

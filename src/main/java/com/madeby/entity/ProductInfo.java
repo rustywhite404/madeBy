@@ -16,7 +16,7 @@ public class ProductInfo {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
-    private Product product; // 연관된 상품
+    private Products products; // 연관된 상품
 
     @Column(nullable = false)
     private double price;
