@@ -1,4 +1,4 @@
-package entity;
+package com.madeby.entity;
 
 
 import jakarta.persistence.*;
@@ -30,8 +30,8 @@ public class User extends Timestamped{
     @Column(nullable = false)
     private String userName;
 
-    @Column(nullable = false)
-    private String number;
+    @Column(nullable = false, unique = true)
+    private String number; //핸드폰번호
 
     @Column(nullable = false)
     private String address;

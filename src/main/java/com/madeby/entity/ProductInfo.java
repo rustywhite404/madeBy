@@ -1,4 +1,4 @@
-package entity;
+package com.madeby.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
