@@ -1,5 +1,6 @@
 package com.madeby.controller;
 
+import com.madeby.common.ApiResponse;
 import com.madeby.dto.SignupRequestDto;
 import com.madeby.dto.UserInfoDto;
 import com.madeby.entity.UserRoleEnum;
@@ -32,7 +33,7 @@ public class UserController {
         }
 
         userService.signup(requestDto);
-        return ResponseEntity.ok("Signup successful. Please login."); // 반환 타입은 String
+        return ResponseEntity.ok(ApiResponse.success("Signup successful. Please login.")); // 반환 타입은 String
     }
 
 

@@ -19,6 +19,9 @@ spring:
     redis:
       address: redis://127.0.0.1:6379
       password: ""
+  jackson:
+    default-property-inclusion: non_null
+
 
 security:
   jwt-secret-key: ${JWT_SECRET_KEY}
