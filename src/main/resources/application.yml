@@ -1,0 +1,22 @@
+spring:
+  docker:
+    compose:
+      file: docker-compose.yml
+  datasource:
+    url: jdbc:mysql://localhost:3308/madeby
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.MySQLDialect
+  data:
+    redis:
+      address: redis://127.0.0.1:6379
+      password: ""
+

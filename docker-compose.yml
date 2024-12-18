@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-container
+    restart: always
+    ports:
+      - "3308:3306" # 로컬 3308 포트를 컨테이너의 3306 포트로 매핑
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
+      MYSQL_DATABASE: madeby # 생성할 데이터베이스 이름
+    volumes:
+      - mysql-data:/var/lib/mysql # MySQL 데이터 저장
+
+  redis:
+    image: redis:7.0
+    container_name: redis-container
+    restart: always
+    ports:
+      - "${REDIS_PORT}:6379" # 로컬 6379 포트를 컨테이너의 6379 포트로 매핑
+    command: ["redis-server", "--appendonly", "yes"] # 영속성을 위한 AOF 설정
+    volumes:
+      - redis-data:/data # Redis 데이터 영속성
+
+  spring:
+    image: madeby:latest # 빌드된 스프링 애플리케이션의 Docker 이미지
+    container_name: spring-container
+    restart: always
+    build:
+      context: . #Dockerfile을 기반으로 자동으로 애플리케이션 빌드
+    ports:
+      - "8081:8080" # 로컬 8081 포트를 컨테이너의 8080 포트로 매핑
+    depends_on:
+      - mysql # spring 서비스가 mysql 서비스에 의존
+      - redis # spring 서비스가 redis 서비스에 의존
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/madeby
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_REDIS_HOST: redis-container # Redis 컨테이너 이름
+      SPRING_REDIS_PORT: ${REDIS_PORT} # Redis 포트
+    env_file:
+      - prod.env
+volumes:
+  mysql-data:
+  redis-data:
