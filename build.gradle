@@ -39,3 +39,7 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+bootJar {
+    archiveFileName = 'madeby.jar' // JAR 파일 이름 설정
+}
