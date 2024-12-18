@@ -12,7 +12,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Product extends Timestamped{
+public class Products extends Timestamped{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -32,7 +32,7 @@ public class Product extends Timestamped{
     @Column(nullable = false)
     private Long registeredBy; // 상품 등록자 ID (User의 ID 참조)
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "products", cascade = CascadeType.ALL)
     private List<ProductInfo> productInfos = new ArrayList<>();
 
 }
