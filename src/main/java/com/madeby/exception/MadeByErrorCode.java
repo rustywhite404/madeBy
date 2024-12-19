@@ -8,6 +8,8 @@ import lombok.Getter;
 @Getter
 public enum MadeByErrorCode {
 
+    DECRYPTION_ERROR("복호화에 실패했습니다."),
+    ENCRYPTION_ERROR("복호화에 실패했습니다."),
     NO_PRODUCT("상품이 존재하지 않습니다."),
     NO_WISHLIST("위시리스트에 등록된 상품이 없습니다."),
     DUPLICATED_USER("해당 정보로 가입된 사용자가 이미 존재합니다."),
@@ -18,7 +20,8 @@ public enum MadeByErrorCode {
     INTERNAL_SERVER_ERROR("서버에 오류가 발생했습니다."),
     INVALID_REQUEST("잘못된 요청입니다"),
     REDIS_ROCK_ERROR("레디스 락 처리 중 문제가 발생했습니다."),
-    RESOURCE_LOCK_FAILURE("리소스 잠금에 실패했습니다.");
+    RESOURCE_LOCK_FAILURE("리소스 잠금에 실패했습니다."),
+    USER_NOT_FOUND("존재하지 않는 사용자입니다.");
 
     private final String message;
 
