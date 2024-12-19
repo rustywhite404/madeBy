@@ -22,6 +22,20 @@ spring:
   jackson:
     default-property-inclusion: non_null
 
+  mail:
+    host: smtp.naver.com
+    port: 465
+    username: my-email@test.com
+    password: mypassword
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            enable: true
 
 security:
   jwt-secret-key: ${JWT_SECRET_KEY}

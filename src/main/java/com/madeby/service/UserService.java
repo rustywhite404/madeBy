@@ -9,11 +9,19 @@ import com.madeby.exception.MadeByErrorCode;
 import com.madeby.exception.MadeByException;
 import com.madeby.repository.UserRepository;
 import com.madeby.util.AES256Util;
+import io.github.cdimascio.dotenv.Dotenv;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +29,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EnvironmentConfig envConfig;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final JavaMailSender mailSender;
 
     // ADMIN_TOKEN
     private String ADMIN_TOKEN;
@@ -65,6 +75,52 @@ public class UserService {
                 .role(role)
                 .userName(encryptedUserName).build();
         userRepository.save(user);
+
+        //인증코드 생성
+        String verificationCode = UUID.randomUUID().toString().substring(0, 6);
+
+        // Redis에 저장 (5분 만료)
+        redisTemplate.opsForValue().set(
+                "email:verification:" + user.getId(),
+                verificationCode,
+                Duration.ofMinutes(5)
+        );
+
+        // 인증 메일 발송
+        sendVerificationEmail(user.getId(), requestDto.getEmail(), verificationCode);
+    }
+
+    // 회원가입 후 인증 메일 발송
+    private void sendVerificationEmail(Long id, String email, String verificationCode) throws MessagingException {
+        String subject = "MadeBy 가입 완료를 위해 인증을 완료해주세요.";
+        String message = "<!DOCTYPE html>" +
+                "<html>" +
+                "<head><title>Email 인증</title></head>" +
+                "<body>" +
+                "<h2>이 링크를 누르면 인증이 완료됩니다</h2>" +
+                "<form action='http://localhost:8080/api/user/auth/" + id + "/" + verificationCode + "' method='POST'>" +
+                "<button type='submit' style='background-color:#4CAF50; border:none; color:white; padding:10px 20px; text-align:center; " +
+                "text-decoration:none; display:inline-block; font-size:16px; margin:10px 0; cursor:pointer; border-radius:5px;'>Verify</button>" +
+                "</form>" +
+                "</body>" +
+                "</html>";
+
+        Dotenv dotenv = Dotenv.load();
+        String fromEmail = dotenv.get("FROM_EMAIL");
+
+        // MimeMessage 생성
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+
+        // MimeMessageHelper를 사용해 HTML 이메일 설정
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
+        helper.setFrom(fromEmail); // 발신자 이메일
+        helper.setTo(email); // 수신자 이메일
+        helper.setSubject(subject); // 이메일 제목
+        helper.setText(message, true); // 두 번째 매개변수를 true로 설정해 HTML 지원
+
+        // 이메일 발송
+        mailSender.send(mimeMessage);
+
     }
 
 
