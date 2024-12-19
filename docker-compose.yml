@@ -25,8 +25,8 @@ services:
     image: madeby:latest # 빌드된 스프링 애플리케이션의 Docker 이미지
     container_name: spring-container
     restart: always
-    build:
-      context: . #Dockerfile을 기반으로 자동으로 애플리케이션 빌드
+    #build:
+    #  context: . #Dockerfile을 기반으로 자동으로 애플리케이션 빌드
     ports:
       - "8081:8080" # 로컬 8081 포트를 컨테이너의 8080 포트로 매핑
     depends_on:
