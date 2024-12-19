@@ -3,6 +3,7 @@ package com.madeby.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Comment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,24 +18,30 @@ import java.util.List;
 public class User extends Timestamped{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; //고유번호
+    private Long id;
 
     @Column(nullable = false, unique = true)
-    private String email; //email로 userId를 대체
+    @Comment(value = "이메일 주소(userId를 대체)")
+    private String email; 
 
     @Column(nullable = false)
+    @Comment(value = "이메일 인증여부")
     private boolean emailVerified = false; //이메일 인증여부
 
     @Column(nullable = false)
+    @Comment(value = "비밀번호")
     private String password;
 
     @Column(nullable = false)
+    @Comment(value = "유저명")
     private String userName;
 
     @Column(nullable = false, unique = true)
+    @Comment(value = "핸드폰번호")
     private String number; //핸드폰번호
 
     @Column(nullable = false)
+    @Comment(value = "주소")
     private String address;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
@@ -42,9 +49,11 @@ public class User extends Timestamped{
 
     @Column(nullable = false)
     @Enumerated(value = EnumType.STRING)
+    @Comment(value = "권한")
     private UserRoleEnum role;
 
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
+    @Comment(value = "탈퇴여부")
     private boolean isDeleted = false; //회원탈퇴 여부
 
 }

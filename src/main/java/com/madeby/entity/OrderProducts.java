@@ -2,6 +2,7 @@ package com.madeby.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Comment;
 
 @Entity
 @Getter
@@ -23,5 +24,7 @@ public class OrderProducts {
     private Products products;
 
     @Column(nullable = false)
-    private int quantity; // 해당 오더에서 주문한 각 상품의 수량
+    @Comment(value = "해당 주문건의 각 상품별 수량")
+    private int quantity;
 }
+

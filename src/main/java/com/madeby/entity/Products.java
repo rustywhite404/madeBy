@@ -2,6 +2,7 @@ package com.madeby.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Comment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,19 +19,26 @@ public class Products extends Timestamped{
     private Long id;
 
     @Column(nullable = false)
+    @Comment(value = "상품명")
     private String name;
 
-    private String image; //상품 이미지
-    private String description; //상품 상세 설명
+    @Comment(value = "상품이미지")
+    private String image;
 
+    @Comment(value = "상세설명")
+    private String description;
+
+    @Comment(value = "카테고리")
     @Column(nullable = false)
     private String category;
 
     @Column(nullable = false)
-    private boolean isVisible = true; // 상품 노출 여부 (기본값: true)
+    @Comment(value = "상품 노출여부")
+    private boolean isVisible = true;
 
     @Column(nullable = false)
-    private Long registeredBy; // 상품 등록자 ID (User의 ID 참조)
+    @Comment(value = "상품 등록자 ID")
+    private Long registeredBy;
 
     @OneToMany(mappedBy = "products", cascade = CascadeType.ALL)
     private List<ProductInfo> productInfos = new ArrayList<>();

@@ -2,6 +2,7 @@ package com.madeby.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Comment;
 
 @Entity
 @Getter
@@ -19,14 +20,18 @@ public class ProductInfo {
     private Products products; // 연관된 상품
 
     @Column(nullable = false)
+    @Comment(value = "상품가격")
     private double price;
 
     @Column(nullable = false)
-    private int stock; //재고 수량
+    @Comment(value = "재고수량")
+    private int stock;
 
     @Column(nullable = false)
-    private String size; // 상품 사이즈
+    @Comment(value = "사이즈")
+    private String size;
 
     @Column(nullable = false)
-    private String color; // 상품 색상
+    @Comment(value = "색상")
+    private String color;
 }

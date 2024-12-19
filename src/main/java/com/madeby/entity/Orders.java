@@ -2,7 +2,9 @@ package com.madeby.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Comment;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +28,17 @@ public class Orders extends Timestamped{
 
     @Column(nullable = false)
     @Enumerated(value = EnumType.STRING)
+    @Comment(value = "주문상태")
     private OrderStatus status;
+
+    @Comment(value = "배송 시작일")
+    private LocalDate deliveryStartDate;
+
+    @Comment(value = "반품 신청일")
+    private LocalDate returnRequestedDate;
+
+    @Column(nullable = false)
+    @Comment(value = "반품 가능 여부")
+    private boolean isReturnable;
 
 }
