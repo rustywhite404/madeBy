@@ -6,10 +6,7 @@ import com.madeby.exception.MadeByException;
 import com.madeby.service.ProductsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,6 +16,7 @@ import java.util.List;
 public class ProductController {
     private final ProductsService productsService;
 
+    //상품 목록 보기
     @GetMapping("/products")
     public  ResponseEntity<List<ProductResponseDto>> getProducts(
             @RequestParam(required = false) Long cursor,
@@ -30,5 +28,12 @@ public class ProductController {
 
         List<ProductResponseDto> products = productsService.getProducts(cursor, size).getContent();
         return ResponseEntity.ok(products);
+    }
+
+    //상품 상세 보기
+    @GetMapping("/products/{productId}")
+    public ResponseEntity<ProductResponseDto> getProductDetail(@PathVariable Long productId) {
+        ProductResponseDto productDetail = productsService.getProductWithInfos(productId);
+        return ResponseEntity.ok(productDetail);
     }
 }

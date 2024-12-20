@@ -1,7 +1,10 @@
 package com.madeby.service;
 
+import com.madeby.dto.ProductInfoResponseDto;
 import com.madeby.dto.ProductResponseDto;
 import com.madeby.entity.Products;
+import com.madeby.exception.MadeByErrorCode;
+import com.madeby.exception.MadeByException;
 import com.madeby.repository.ProductsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -9,6 +12,8 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,5 +42,30 @@ public class ProductsService {
                 .description(product.getDescription())
                 .category(product.getCategory())
                 .build());
+    }
+
+    public ProductResponseDto getProductWithInfos(Long productId) {
+        // Products와 연관된 ProductInfo를 함께 조회
+        Products product = productsRepository.findByIdAndIsVisibleTrue(productId)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
+
+        // ProductResponseDto로 변환
+        return ProductResponseDto.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .image(product.getImage())
+                .category(product.getCategory())
+                .registeredBy(product.getRegisteredBy())
+                .infos(product.getProductInfos().stream()
+                        .map(info -> ProductInfoResponseDto.builder()
+                                .id(info.getId())
+                                .price(info.getPrice())
+                                .stock(info.getStock())
+                                .size(info.getSize())
+                                .color(info.getColor())
+                                .build())
+                        .collect(Collectors.toList()))
+                .build();
     }
 }
