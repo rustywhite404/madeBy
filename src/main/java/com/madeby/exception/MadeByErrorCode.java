@@ -21,7 +21,10 @@ public enum MadeByErrorCode {
     INVALID_REQUEST("잘못된 요청입니다"),
     REDIS_ROCK_ERROR("레디스 락 처리 중 문제가 발생했습니다."),
     RESOURCE_LOCK_FAILURE("리소스 잠금에 실패했습니다."),
-    USER_NOT_FOUND("존재하지 않는 사용자입니다.");
+    USER_NOT_FOUND("존재하지 않는 사용자입니다."),
+    EMAIL_NOT_VERIFIED("이메일 인증이 필요합니다."),
+    AUTHENTICATION_FAILED("인증에 실패했습니다."),
+    USER_DELETED("탈퇴한 사용자입니다.");
 
     private final String message;
 

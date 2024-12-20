@@ -3,7 +3,7 @@ package com.madeby.exception;
 import lombok.Getter;
 
 @Getter
-public class MadeByException extends RuntimeException{
+public class MadeByException extends RuntimeException {
     private MadeByErrorCode madeByErrorCode;
     private String detailMessage;
 

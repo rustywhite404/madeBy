@@ -1,8 +1,10 @@
 package com.madeby.common;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 
 @Getter
+@JsonInclude(JsonInclude.Include.NON_NULL) //null값 제외하고 반환
 public class ApiResponse<T> {
     private boolean success;
     private T data;

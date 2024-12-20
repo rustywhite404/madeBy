@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
@@ -42,7 +43,7 @@ public class UserController {
         }
 
         userService.signup(requestDto);
-        return ResponseEntity.ok(ApiResponse.success("Signup successful. Please login.")); // 반환 타입은 String
+        return ResponseEntity.ok(ApiResponse.success("가입이 완료되었습니다. 이메일 인증 후 로그인하세요.")); // 반환 타입은 String
     }
 
 
@@ -85,9 +86,9 @@ public class UserController {
         String storedCode = redisTemplate.opsForValue().get(redisKey);
 
         if (storedCode == null || !storedCode.equals(code)) {
-            Map<String, String> errors = new HashMap<>();
-            errors.put("error", "유효하지 않거나 만료된 인증 코드입니다.");
-            return ResponseEntity.badRequest().body(errors);
+
+            ApiResponse<?> errorResponse = ApiResponse.failure("INVALID_CODE", "유효하지 않거나 만료된 인증 코드입니다.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
         }
 
         // User 엔티티 업데이트
