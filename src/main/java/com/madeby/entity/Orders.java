@@ -23,8 +23,9 @@ public class Orders extends Timestamped{
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
-    private List<OrderProducts> orderProducts = new ArrayList<>();
+    @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Comment(value = "주문 상품 스냅샷 목록")
+    private List<OrderProductSnapshot> orderProductSnapshots = new ArrayList<>();
 
     @Column(nullable = false)
     @Enumerated(value = EnumType.STRING)
