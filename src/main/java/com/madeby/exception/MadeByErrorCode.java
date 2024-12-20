@@ -10,6 +10,7 @@ public enum MadeByErrorCode {
 
     DECRYPTION_ERROR("복호화에 실패했습니다."),
     ENCRYPTION_ERROR("복호화에 실패했습니다."),
+    OUT_OF_RANGE("요청 범위를 초과했습니다."),
     NO_PRODUCT("상품이 존재하지 않습니다."),
     NO_WISHLIST("위시리스트에 등록된 상품이 없습니다."),
     DUPLICATED_USER("해당 정보로 가입된 사용자가 이미 존재합니다."),
