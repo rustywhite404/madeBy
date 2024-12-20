@@ -10,16 +10,22 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.IOException;
+import java.time.Duration;
 
 @Slf4j(topic = "로그인 및 JWT 생성")
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final JwtUtil jwtUtil;
+
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
@@ -30,7 +36,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         try {
             LoginRequestDto requestDto = new ObjectMapper().readValue(request.getInputStream(), LoginRequestDto.class);
-            log.info("사용자 요청: {}", requestDto.toString());
             return getAuthenticationManager().authenticate(
                     new UsernamePasswordAuthenticationToken(
                             requestDto.getEmail(),
@@ -46,16 +51,34 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException {
-        String email = ((UserDetailsImpl) authResult.getPrincipal()).getUsername();
-
+        String emailHash = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getEmailHash(); // 해시값 가져오기
         UserRoleEnum role = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getRole();
-        String token = jwtUtil.createToken(email, role);
-        log.info("생성된 JWT: {}", token);
-        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, token);
+
+        //accessToken 생성
+        String accessToken = jwtUtil.createToken(emailHash, role);
+        log.info("생성된 Access Token: {}", accessToken);
+
+        // Refresh Token 처리
+        String refreshToken = redisTemplate.opsForValue().get("refreshToken:" + emailHash); // 기존 Refresh Token 확인
+
+        if (refreshToken == null) {
+            // Refresh Token이 없는 경우에만 새로 생성
+            refreshToken = jwtUtil.createRefreshToken(emailHash);
+            redisTemplate.opsForValue().set(
+                    "refreshToken:" + emailHash,
+                    refreshToken,
+                    Duration.ofDays(14)
+            );
+        }
+        log.info("생성된 refresh Token: {}", refreshToken);
+
+        // 응답 헤더에 토큰 추가
+        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, accessToken);
+        response.addHeader("Refresh-Token", refreshToken);
 
         // 성공 메시지를 JSON 형태로 작성
         response.setContentType("application/json;charset=UTF-8");
-        String successMessage = String.format("{\"message\": \"로그인에 성공하였습니다.\", \"token\": \"%s\"}", token);
+        String successMessage = String.format("{\"message\": \"로그인에 성공하였습니다.\", \"accessToken\": \"%s\", \"refreshToken\": \"%s\"}", accessToken, refreshToken);
         response.getWriter().write(successMessage);
         response.getWriter().flush();
     }

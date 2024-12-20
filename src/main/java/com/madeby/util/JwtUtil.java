@@ -8,6 +8,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -19,6 +20,9 @@ import java.util.Date;
 @Component
 @RequiredArgsConstructor
 public class JwtUtil {
+
+    private RedisTemplate<String, String> redisTemplate;
+
     // Header KEY 값
     public static final String AUTHORIZATION_HEADER = "Authorization";
     // 사용자 권한 값의 KEY
@@ -52,6 +56,44 @@ public class JwtUtil {
                         .setIssuedAt(date) // 발급일
                         .signWith(key, signatureAlgorithm) // 암호화 알고리즘
                         .compact();
+    }
+
+    // refresh Token 생성
+    public String createRefreshToken(String emailHash) {
+        Date now = new Date();
+        long refreshTokenValidity = 14 * 24 * 60 * 60 * 1000L; // 2주
+
+        return Jwts.builder()
+                .setSubject(emailHash)
+                .setExpiration(new Date(now.getTime() + refreshTokenValidity))
+                .setIssuedAt(now)
+                .signWith(key, signatureAlgorithm)
+                .compact();
+    }
+
+    // Refresh Token 검증
+    public boolean validateRefreshToken(String refreshToken, String emailHash) {
+        // Redis에서 저장된 Refresh Token 가져오기
+        String storedToken = redisTemplate.opsForValue().get("refreshToken:" + emailHash);
+
+        // 저장된 Refresh Token과 비교
+        return storedToken != null && storedToken.equals(refreshToken);
+    }
+
+    // Access Token 갱신
+    public String refreshAccessToken(String refreshToken, String emailHash) {
+        // Refresh Token 검증
+        if (!validateRefreshToken(refreshToken, emailHash)) {
+            throw new IllegalArgumentException("Invalid Refresh Token");
+        }
+
+        // Refresh Token에서 권한 정보 추출
+        Claims claims = getUserInfoFromToken(refreshToken);
+        String roleString = claims.get(JwtUtil.AUTHORIZATION_KEY, String.class);
+        UserRoleEnum role = UserRoleEnum.valueOf(roleString);
+
+        // 새로운 Access Token 생성
+        return createToken(emailHash, role);
     }
 
     // header 에서 JWT 가져오기
