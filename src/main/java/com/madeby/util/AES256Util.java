@@ -3,6 +3,7 @@ package com.madeby.util;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -54,5 +55,12 @@ public class AES256Util {
         byte[] decodedBytes = Base64.getDecoder().decode(encryptedData);
         byte[] decryptedBytes = cipher.doFinal(decodedBytes);
         return new String(decryptedBytes);
+    }
+
+    // SHA-256 해시 생성
+    public static String hashEmail(String email) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(email.getBytes("UTF-8"));
+        return Base64.getEncoder().encodeToString(hash);
     }
 }

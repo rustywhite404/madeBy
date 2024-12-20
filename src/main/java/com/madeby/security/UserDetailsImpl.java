@@ -17,6 +17,7 @@ public class UserDetailsImpl implements UserDetails {
         this.user = user;
     }
 
+    // User 엔티티 반환 (필요 시 추가 정보에 접근 가능)
     public User getUser() {
         return user;
     }
@@ -28,7 +29,17 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public String getUsername() {
-        return user.getUserName();
+        return user.getEmail(); // username 대신 email 반환
+    }
+
+    // 이메일 인증 여부 확인
+    public boolean isEmailVerified() {
+        return user.isEmailVerified();
+    }
+
+    // 탈퇴 여부 확인
+    public boolean isDeleted() {
+        return user.isDeleted();
     }
 
     @Override
@@ -43,23 +54,25 @@ public class UserDetailsImpl implements UserDetails {
         return authorities;
     }
 
+    // 계정 활성화 여부 (이메일 인증 및 탈퇴 여부 확인)
+    @Override
+    public boolean isEnabled() {
+        return user.isEmailVerified() && !user.isDeleted();
+    }
+
     @Override
     public boolean isAccountNonExpired() {
         return true;
     }
 
+    // 계정 잠금 여부 (탈퇴 여부를 기준으로 처리)
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !user.isDeleted();
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
         return true;
     }
 }

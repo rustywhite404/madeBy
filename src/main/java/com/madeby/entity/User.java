@@ -22,7 +22,11 @@ public class User extends Timestamped{
 
     @Column(nullable = false, unique = true)
     @Comment(value = "이메일 주소(userId를 대체)")
-    private String email; 
+    private String email;
+
+    @Column(nullable = false, unique = true)
+    @Comment(value = "로그인 시 비교용 해시값")
+    private String emailHash;
 
     @Column(nullable = false)
     @Comment(value = "이메일 인증여부")
@@ -52,7 +56,7 @@ public class User extends Timestamped{
     @Comment(value = "권한")
     private UserRoleEnum role;
 
-    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
+    @Column(nullable = false)
     @Comment(value = "탈퇴여부")
     private boolean isDeleted = false; //회원탈퇴 여부
 

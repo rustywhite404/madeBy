@@ -1,8 +1,10 @@
 package com.madeby.security;
+
 import com.madeby.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +37,11 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(tokenValue)) {
 
             if (!jwtUtil.validateToken(tokenValue)) {
-                log.error("Token Error");
+                log.error("Token validation failed - 쿠키 삭제 중");
+                Cookie cookie = new Cookie("Authorization", null);
+                cookie.setMaxAge(0);
+                cookie.setHttpOnly(true);
+                res.addCookie(cookie);
                 return;
             }
 

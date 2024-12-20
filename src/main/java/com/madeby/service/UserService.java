@@ -45,6 +45,9 @@ public class UserService {
             throw new MadeByException(MadeByErrorCode.DUPLICATED_EMAIL);
         }
 
+        // 비교용 해시 생성
+        String emailHash = AES256Util.hashEmail(requestDto.getEmail());
+
         // 핸드폰번호 중복확인
         String encryptedNumber = AES256Util.encryptWithIV(requestDto.getNumber());
         Optional<User> checkNumber = userRepository.findByNumber(encryptedNumber);
@@ -70,6 +73,7 @@ public class UserService {
         User user = User.builder()
                 .address(encryptedAddress)
                 .email(encryptedEmail)
+                .emailHash(emailHash)
                 .number(encryptedNumber)
                 .password(password)
                 .role(role)

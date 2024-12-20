@@ -1,10 +1,12 @@
 package com.madeby.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.madeby.common.ApiResponse;
 import com.madeby.dto.LoginRequestDto;
 import com.madeby.entity.UserRoleEnum;
 import com.madeby.util.JwtUtil;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -28,10 +30,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         try {
             LoginRequestDto requestDto = new ObjectMapper().readValue(request.getInputStream(), LoginRequestDto.class);
-
+            log.info("사용자 요청: {}", requestDto.toString());
             return getAuthenticationManager().authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            requestDto.getUserName(),
+                            requestDto.getEmail(),
                             requestDto.getPassword(),
                             null
                     )
@@ -43,17 +45,48 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     }
 
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) {
-        String userName = ((UserDetailsImpl) authResult.getPrincipal()).getUsername();
-        UserRoleEnum role = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getRole();
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException {
+        String email = ((UserDetailsImpl) authResult.getPrincipal()).getUsername();
 
-        String token = jwtUtil.createToken(userName, role);
+        UserRoleEnum role = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getRole();
+        String token = jwtUtil.createToken(email, role);
+        log.info("생성된 JWT: {}", token);
         response.addHeader(JwtUtil.AUTHORIZATION_HEADER, token);
+
+        // 성공 메시지를 JSON 형태로 작성
+        response.setContentType("application/json;charset=UTF-8");
+        String successMessage = String.format("{\"message\": \"로그인에 성공하였습니다.\", \"token\": \"%s\"}", token);
+        response.getWriter().write(successMessage);
+        response.getWriter().flush();
     }
 
     @Override
-    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
-        response.setStatus(401);
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException {
+        // 상태 코드 초기값
+        int statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+        String errorCode = "AUTHENTICATION_FAILED";
+        String errorMessage = "잘못된 로그인 정보입니다.";
+
+        // 쿠키 삭제
+        Cookie cookie = new Cookie("Authorization", null);
+        cookie.setMaxAge(0);
+        cookie.setHttpOnly(true);
+        response.addCookie(cookie);
+
+        errorMessage = failed.getMessage();
+
+        // 응답 객체 생성
+        ApiResponse<?> errorResponse = ApiResponse.failure(errorCode, errorMessage);
+
+        // JSON 변환
+        ObjectMapper objectMapper = new ObjectMapper();
+        String jsonResponse = objectMapper.writeValueAsString(errorResponse);
+
+        // 응답 설정
+        response.setStatus(statusCode);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(jsonResponse);
+        response.getWriter().flush();
     }
 
 }
