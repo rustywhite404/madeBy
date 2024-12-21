@@ -27,7 +27,7 @@ public enum MadeByErrorCode {
 
     NO_ORDER("주문 내역이 존재하지 않습니다."),
     DECREMENT_STOCK_FAILURE("상품 구매에 실패했습니다. 재고를 다시 확인해주세요."),
-
+    MIN_AMOUNT("최소 구매 수량은 1개입니다."),
 
     DECRYPTION_ERROR("복호화에 실패했습니다."),
     ENCRYPTION_ERROR("복호화에 실패했습니다."),
