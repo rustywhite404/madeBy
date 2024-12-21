@@ -1,5 +1,6 @@
 package com.madeby.controller;
 
+import com.madeby.common.ApiResponse;
 import com.madeby.dto.ProductResponseDto;
 import com.madeby.exception.MadeByErrorCode;
 import com.madeby.exception.MadeByException;
@@ -18,7 +19,7 @@ public class ProductController {
 
     //상품 목록 보기
     @GetMapping("/products")
-    public  ResponseEntity<List<ProductResponseDto>> getProducts(
+    public  ResponseEntity<ApiResponse<List<ProductResponseDto>>> getProducts(
             @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "10") int size) {
 
@@ -27,13 +28,15 @@ public class ProductController {
         }
 
         List<ProductResponseDto> products = productsService.getProducts(cursor, size).getContent();
-        return ResponseEntity.ok(products);
+
+        return ResponseEntity.ok(ApiResponse.success(products));
     }
 
     //상품 상세 보기
     @GetMapping("/products/{productId}")
-    public ResponseEntity<ProductResponseDto> getProductDetail(@PathVariable Long productId) {
+    public
+    ResponseEntity<ApiResponse<ProductResponseDto>> getProductDetail(@PathVariable Long productId) {
         ProductResponseDto productDetail = productsService.getProductWithInfos(productId);
-        return ResponseEntity.ok(productDetail);
+        return ResponseEntity.ok(ApiResponse.success(productDetail));
     }
 }
