@@ -8,7 +8,8 @@ import lombok.Getter;
 public enum OrderStatus {
     ORDERED("주문완료"),
     CANCELLED("주문취소"),
-    DELIVERED("배송중"),
+    SHIPPING("배송중"),
+    DELIVERED("배송완료"),
     RETURN_REQUEST("반품신청"),
     RETURNED("반품완료");
 

@@ -35,6 +35,9 @@ public class Orders extends Timestamped{
     @Comment(value = "배송 시작일")
     private LocalDate deliveryStartDate;
 
+    @Comment(value = "배송 완료일")
+    private LocalDate deliveryEndDate;
+
     @Comment(value = "반품 신청일")
     private LocalDate returnRequestedDate;
 
