@@ -1,14 +1,22 @@
 package com.madeby.service;
 
+import com.madeby.dto.OrderResponseDto;
 import com.madeby.entity.*;
 import com.madeby.exception.MadeByErrorCode;
 import com.madeby.exception.MadeByException;
-import com.madeby.repository.*;
+import com.madeby.repository.OrderProductSnapshotRepository;
+import com.madeby.repository.OrderRepository;
+import com.madeby.repository.ProductInfoRepository;
+import com.madeby.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -72,8 +80,32 @@ public class OrderService {
 
     // 주문 조회(조회만 수행하므로 읽기 전용 트랜잭션)
     @Transactional(readOnly = true)
-    public Orders getOrderDetails(Long orderId) {
-        return orderRepository.findById(orderId)
-                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_ORDER));
+    public List<OrderResponseDto> getOrders(Long userId, LocalDate startDate, LocalDate endDate, Long cursor, int size) {
+        // 조회 날짜 범위 기본값 설정(3개월 이내)
+        if (startDate == null) {
+            startDate = LocalDate.now().minusMonths(3);
+        }
+        if (endDate == null) {
+            endDate = LocalDate.now();
+        }
+
+        // createdAt이 LocalDateTime이므로 LocalDate → LocalDateTime 변환
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
+
+        // 주문 내역 조회
+        List<Orders> orders = orderRepository.findOrdersByUserIdAndDateWithCursor(
+                userId, startDateTime, endDateTime, cursor, size
+        );
+
+        // 결과가 비어 있으면 예외 발생
+        if (orders.isEmpty()) {
+            throw new MadeByException(MadeByErrorCode.NO_ORDER);
+        }
+
+        // DTO 변환
+        return orders.stream()
+                .map(OrderResponseDto::fromEntity)
+                .toList();
     }
 }

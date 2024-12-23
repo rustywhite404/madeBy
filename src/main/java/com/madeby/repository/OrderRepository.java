@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Orders, Long> {
@@ -32,5 +33,18 @@ public interface OrderRepository extends JpaRepository<Orders, Long> {
             @Param("beforeDate") LocalDate beforeDate,
             @Param("lastCursor") Long lastCursor,
             @Param("batchSize") int batchSize
+    );
+
+    @Query("SELECT o FROM Orders o " +
+            "WHERE o.user.id = :userId " +
+            "AND o.createdAt BETWEEN :startDate AND :endDate " +
+            "AND o.id > :cursor " +
+            "ORDER BY o.id ASC")
+    List<Orders> findOrdersByUserIdAndDateWithCursor(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            @Param("cursor") Long cursor,
+            @Param("size") int size
     );
 }
