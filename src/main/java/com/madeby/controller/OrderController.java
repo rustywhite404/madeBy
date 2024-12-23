@@ -45,11 +45,8 @@ public class OrderController {
             @RequestParam(required = false, defaultValue = "0") Long cursor,
             @RequestParam(defaultValue = "10") int size
     ) {
-
-        log.info("startDate: {}, endDate: {}", startDate, endDate);
         // 로그인 확인
         Long userId = userDetails.getUser().getId();
-        log.info("-------------로그인 한 userId:"+userId);
 
         // 주문 내역 조회
         List<OrderResponseDto> orders = orderService.getOrders(userId, startDate, endDate, cursor, size);

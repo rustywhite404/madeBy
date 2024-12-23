@@ -29,6 +29,7 @@ public class JwtUtil {
     public static final String AUTHORIZATION_KEY = "auth";
     // Token 식별자
     public static final String BEARER_PREFIX = "Bearer ";
+
     // 토큰 만료시간
     private final long TOKEN_TIME = 60 * 60 * 1000L; // 60분
 
@@ -44,7 +45,7 @@ public class JwtUtil {
         key = Keys.hmacShaKeyFor(bytes);
     }
 
-    // 토큰 생성
+    // Access Token 생성
     public String createToken(String userName, UserRoleEnum role) {
         Date date = new Date();
 
@@ -80,22 +81,6 @@ public class JwtUtil {
         return storedToken != null && storedToken.equals(refreshToken);
     }
 
-    // Access Token 갱신
-    public String refreshAccessToken(String refreshToken, String emailHash) {
-        // Refresh Token 검증
-        if (!validateRefreshToken(refreshToken, emailHash)) {
-            throw new IllegalArgumentException("Invalid Refresh Token");
-        }
-
-        // Refresh Token에서 권한 정보 추출
-        Claims claims = getUserInfoFromToken(refreshToken);
-        String roleString = claims.get(JwtUtil.AUTHORIZATION_KEY, String.class);
-        UserRoleEnum role = UserRoleEnum.valueOf(roleString);
-
-        // 새로운 Access Token 생성
-        return createToken(emailHash, role);
-    }
-
     // header 에서 JWT 가져오기
     public String getJwtFromHeader(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
@@ -122,8 +107,15 @@ public class JwtUtil {
         return false;
     }
 
-    // 토큰에서 사용자 정보 가져오기
+    //만료된 AccessToken에서 정보 추출
     public Claims getUserInfoFromToken(String token) {
-        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+        try {
+            return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+        } catch (ExpiredJwtException e) {
+            log.info("JWT 토큰이 만료되었습니다.");
+            throw e; // 만료된 토큰에서 doFilterInternal로 예외를 던짐
+        }
     }
+
+
 }
