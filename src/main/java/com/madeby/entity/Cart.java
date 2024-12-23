@@ -6,13 +6,15 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @Entity
 @Getter
 @Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Cart extends Timestamped {
+public class Cart extends Timestamped{
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,27 +23,35 @@ public class Cart extends Timestamped {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "cart_id") // 외래 키 설정 (CartProduct 테이블에서 cart_id로 참조)
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CartProduct> cartProducts = new ArrayList<>();
 
     // 상품 추가
-    public void addProduct(Products product, int quantity) {
-        CartProduct cartProduct = new CartProduct(product, quantity);
-        this.cartProducts.add(cartProduct);
+    public boolean addProduct(ProductInfo productInfo, int quantity) {
+        for (CartProduct cartProduct : cartProducts) {
+            if (cartProduct.getProductInfo().equals(productInfo)) {
+                cartProduct.setQuantity(cartProduct.getQuantity() + quantity);
+                return true; // 상품 수량 업데이트
+            }
+        }
+        this.cartProducts.add(new CartProduct(this, productInfo, quantity));
+        return true; // 새 상품 추가
     }
 
     // 상품 삭제
-    public void removeProduct(Products product) {
-        this.cartProducts.removeIf(cartProduct -> cartProduct.getProduct().equals(product));
+    public void removeProduct(ProductInfo productInfo) {
+        this.cartProducts.removeIf(cartProduct -> cartProduct.getProductInfo().equals(productInfo));
     }
 
     // 수량 업데이트
-    public void updateQuantity(Products product, int quantity) {
+    public void updateQuantity(ProductInfo productInfo, int quantity) {
         for (CartProduct cartProduct : cartProducts) {
-            if (cartProduct.getProduct().equals(product)) {
+            if (cartProduct.getProductInfo().equals(productInfo)) {
                 cartProduct.setQuantity(quantity);
+                return; // 업데이트 완료 후 종료
             }
         }
+        throw new IllegalArgumentException("장바구니에 해당 상품이 없습니다.");
     }
+
 }

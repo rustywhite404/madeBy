@@ -1,7 +1,7 @@
 package com.madeby.service;
 
-import com.madeby.dto.ProductInfoResponseDto;
-import com.madeby.dto.ProductResponseDto;
+import com.madeby.dto.ProductInfoDto;
+import com.madeby.dto.ProductsDto;
 import com.madeby.entity.Products;
 import com.madeby.exception.MadeByErrorCode;
 import com.madeby.exception.MadeByException;
@@ -22,7 +22,7 @@ public class ProductsService {
     private final ProductsRepository productsRepository;
 
     @Transactional(readOnly = true)
-    public Slice<ProductResponseDto> getProducts(Long cursor, int size) {
+    public Slice<ProductsDto> getProducts(Long cursor, int size) {
         // 최신 등록순으로(내림차순) 정렬
         PageRequest pageRequest = PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "id"));
 
@@ -35,30 +35,30 @@ public class ProductsService {
             productSlice = productsRepository.findByIsVisibleTrueAndIdLessThan(cursor, pageRequest);
         }
 
-        return productSlice.map(product -> ProductResponseDto.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .image(product.getImage())
-                .description(product.getDescription())
-                .category(product.getCategory())
-                .build());
+        // Products -> ProductsDto 변환
+        return productSlice.map(this::convertToProductsDto);
     }
 
-    public ProductResponseDto getProductWithInfos(Long productId) {
+    @Transactional(readOnly = true)
+    public ProductsDto getProductWithInfos(Long productId) {
         // Products와 연관된 ProductInfo를 함께 조회
         Products product = productsRepository.findByIdAndIsVisibleTrue(productId)
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
 
-        // ProductResponseDto로 변환
-        return ProductResponseDto.builder()
+        // ProductsDto로 변환
+        return convertToProductsDto(product);
+    }
+
+    // Products -> ProductsDto 변환 로직 추출
+    private ProductsDto convertToProductsDto(Products product) {
+        return ProductsDto.builder()
                 .id(product.getId())
                 .name(product.getName())
                 .description(product.getDescription())
                 .image(product.getImage())
                 .category(product.getCategory())
-                .registeredBy(product.getRegisteredBy())
-                .infos(product.getProductInfos().stream()
-                        .map(info -> ProductInfoResponseDto.builder()
+                .productInfos(product.getProductInfos().stream()
+                        .map(info -> ProductInfoDto.builder()
                                 .id(info.getId())
                                 .price(info.getPrice())
                                 .stock(info.getStock())

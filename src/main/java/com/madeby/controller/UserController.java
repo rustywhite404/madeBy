@@ -50,19 +50,23 @@ public class UserController {
     // 회원 정보 조회(이름, 관리자 여부만 리턴)
     @GetMapping("/user-info")
     @ResponseBody
-    public UserInfoDto getUserInfo(@AuthenticationPrincipal UserDetailsImpl userDetails){
-
+    public UserInfoDto getUserInfo(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         try {
+            // 암호화된 사용자명을 복호화
             String encryptedUserName = userDetails.getUser().getUserName();
             String userName = AES256Util.decryptWithIV(encryptedUserName);
+
+            // 권한 확인
             UserRoleEnum role = userDetails.getUser().getRole();
             boolean isAdmin = (role == UserRoleEnum.ADMIN);
-            return new UserInfoDto(userName, isAdmin);
+
+            // 정적 팩토리 메서드로 최소 정보 DTO 생성
+            return UserInfoDto.minimalInfo(userName, isAdmin);
         } catch (Exception e) {
             throw new RuntimeException("Error while decrypting user data", e);
         }
-
     }
+
 
     // 회원 정보 조회(전체 정보 리턴)
     @GetMapping("/user-infoAll")

@@ -1,5 +1,6 @@
 package com.madeby.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Comment;
@@ -41,6 +42,8 @@ public class Products extends Timestamped{
     private Long registeredBy;
 
     @OneToMany(mappedBy = "products", cascade = CascadeType.ALL)
+    @JsonManagedReference // 자식 참조
     private List<ProductInfo> productInfos = new ArrayList<>();
+
 
 }

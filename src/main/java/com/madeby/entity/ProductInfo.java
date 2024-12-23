@@ -1,8 +1,12 @@
 package com.madeby.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Comment;
+
+import java.math.BigDecimal;
 
 @Entity
 @Getter
@@ -17,11 +21,13 @@ public class ProductInfo {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
+    @JsonIgnore
+    @JsonBackReference // 부모 참조
     private Products products; // 연관된 상품
 
     @Column(nullable = false)
     @Comment(value = "상품가격")
-    private double price;
+    private BigDecimal price;
 
     @Column(nullable = false)
     @Comment(value = "재고수량")

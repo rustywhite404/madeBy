@@ -1,6 +1,6 @@
 package com.madeby.entity;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Comment;
@@ -16,6 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @Table(name = "users")
 public class User extends Timestamped{
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,7 +31,7 @@ public class User extends Timestamped{
 
     @Column(nullable = false)
     @Comment(value = "이메일 인증여부")
-    private boolean emailVerified = false; //이메일 인증여부
+    private boolean emailVerified = false; // 이메일 인증 여부
 
     @Column(nullable = false)
     @Comment(value = "비밀번호")
@@ -42,13 +43,14 @@ public class User extends Timestamped{
 
     @Column(nullable = false, unique = true)
     @Comment(value = "핸드폰번호")
-    private String number; //핸드폰번호
+    private String number; // 핸드폰번호
 
     @Column(nullable = false)
     @Comment(value = "주소")
     private String address;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Orders> orders = new ArrayList<>();
 
     @Column(nullable = false)
@@ -58,6 +60,11 @@ public class User extends Timestamped{
 
     @Column(nullable = false)
     @Comment(value = "탈퇴여부")
-    private boolean isDeleted = false; //회원탈퇴 여부
+    private boolean isDeleted = false; // 회원 탈퇴 여부
+
+    // 생성자 추가
+    public User(Long id) {
+        this.id = id;
+    }
 
 }

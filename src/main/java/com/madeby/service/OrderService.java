@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -71,7 +72,7 @@ public class OrderService {
                 .productDescription(product.getDescription())
                 .category(product.getCategory())
                 .quantity(quantity)
-                .price(BigDecimal.valueOf(productInfo.getPrice()))
+                .price(BigDecimal.valueOf(productInfo.getPrice().longValue()))
                 .build();
         snapshotRepository.save(snapshot);
 
@@ -89,7 +90,8 @@ public class OrderService {
             endDate = LocalDate.now();
         }
 
-        // createdAt이 LocalDateTime이므로 LocalDate → LocalDateTime 변환
+        ZoneId zoneId = ZoneId.of("Asia/Seoul"); // 시간대를 명시적으로 지정
+        // 시작 시간과 종료 시간 설정
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
 

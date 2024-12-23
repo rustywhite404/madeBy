@@ -69,6 +69,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/user/**").permitAll() // '/api/user/'로 시작하는 요청 모두 접근 허가
                         .requestMatchers("/api/products/**").permitAll() // '/api/products/'로 시작하는 요청 모두 접근 허가
                         .requestMatchers("/api/orders/**").authenticated() // 인증 필요
+                        .requestMatchers("/api/cart/**").authenticated() // 인증 필요
                         .anyRequest().authenticated() // 그 외 모든 요청 인증처리
         );
 

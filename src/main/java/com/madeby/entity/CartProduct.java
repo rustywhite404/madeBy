@@ -16,15 +16,20 @@ public class CartProduct {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Products product;
+    @JoinColumn(name = "product_info_id", nullable = false) // ProductInfo와 연관
+    private ProductInfo productInfo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cart_id", nullable = false)
+    private Cart cart;
 
     @Column(nullable = false)
     @Comment(value = "담은 수량")
     private int quantity;
 
-    public CartProduct(Products product, int quantity) {
-        this.product = product;
+    public CartProduct(Cart cart, ProductInfo productInfo, int quantity) {
+        this.cart = cart;
+        this.productInfo = productInfo;
         this.quantity = quantity;
     }
 }
