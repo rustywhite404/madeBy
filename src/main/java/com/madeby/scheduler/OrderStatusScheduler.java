@@ -24,7 +24,8 @@ public class OrderStatusScheduler {
     private final OrderRepository orderRepository;
     private final ProductInfoRepository productInfoRepository;
 
-    @Scheduled(cron = "0 0 0,12,18 * * *") // 매일 00:00, 08:00, 16:00에 실행
+    //@Scheduled(cron = "0 0 0,12,18 * * *") // 매일 00:00, 08:00, 16:00에 실행
+    @Scheduled(cron = "0 */5 * * * *") // 테스트를 위해 5분마다 갱신
     public void updateOrderStatus() {
         log.info("-------[제품 상태 업데이트 시작]-------");
 
@@ -53,7 +54,7 @@ public class OrderStatusScheduler {
         do {
             orders = orderRepository.findByStatusAndCreatedAtBeforeWithCursor(
                     OrderStatus.ORDERED,
-                    LocalDate.now().minusDays(1).atStartOfDay(), // LocalDate → LocalDateTime 변환
+                    LocalDate.now().minusDays(1),
                     lastCursor,
                     batchSize
             );
@@ -84,7 +85,7 @@ public class OrderStatusScheduler {
         do {
             orders = orderRepository.findByStatusAndCreatedAtBeforeWithCursor(
                     OrderStatus.SHIPPING,
-                    LocalDate.now().minusDays(1).atStartOfDay(), // LocalDate → LocalDateTime 변환
+                    LocalDate.now().minusDays(1),
                     lastCursor,
                     batchSize
             );
@@ -115,7 +116,7 @@ public class OrderStatusScheduler {
         do {
             orders = orderRepository.findByStatusAndDeliveryEndDateBeforeWithCursor(
                     OrderStatus.DELIVERED,
-                    LocalDate.now().minusDays(1).atStartOfDay(), // LocalDate → LocalDateTime 변환
+                    LocalDate.now().minusDays(1), // LocalDate → LocalDateTime 변환
                     lastCursor,
                     batchSize
             );
@@ -147,7 +148,7 @@ public class OrderStatusScheduler {
         do {
             orders = orderRepository.findByStatusAndReturnRequestedDateBeforeWithCursor(
                     OrderStatus.RETURN_REQUEST,
-                    LocalDate.now().minusDays(1).atStartOfDay(), // LocalDate → LocalDateTime 변환
+                    LocalDate.now().minusDays(1),
                     lastCursor,
                     batchSize
             );

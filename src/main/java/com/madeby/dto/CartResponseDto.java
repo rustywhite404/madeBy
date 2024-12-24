@@ -22,8 +22,6 @@ public class CartResponseDto {
 
     // Entity -> DTO 변환 메서드
     public static CartResponseDto fromEntity(Cart cart) {
-        System.out.println("------------userId:"+cart.getUser().getId());
-        System.out.println("------------userId:"+cart.getUser().getUserName());
         return CartResponseDto.builder()
                 .id(cart.getId())
                 .userId(cart.getUser().getId()) // 유저 ID만 추출

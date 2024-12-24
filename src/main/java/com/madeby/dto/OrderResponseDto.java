@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -38,9 +37,6 @@ public class OrderResponseDto {
                 .map(OrderProductSnapshot::getTotalAmount)
                 .filter(Objects::nonNull) // Null 값 필터링
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // 원하는 시간대로 변환 후 LocalDate 가져오기
-        ZoneId zoneId = ZoneId.of("Asia/Seoul"); // 시간대 설정
 
         return OrderResponseDto.builder()
                 .orderId(order.getId())
