@@ -1,14 +1,13 @@
 package com.madeby.service;
 
+import com.madeby.dto.OrderRequestDto;
 import com.madeby.dto.OrderResponseDto;
 import com.madeby.entity.*;
 import com.madeby.exception.MadeByErrorCode;
 import com.madeby.exception.MadeByException;
-import com.madeby.repository.OrderProductSnapshotRepository;
-import com.madeby.repository.OrderRepository;
-import com.madeby.repository.ProductInfoRepository;
-import com.madeby.repository.UserRepository;
+import com.madeby.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +15,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -26,8 +26,120 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderProductSnapshotRepository snapshotRepository;
     private final UserRepository userRepository;
+    private final CartRepository cartRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
-    // 주문 생성
+    //주문 생성(장바구니에서 여러 상품 주문)
+    @Transactional
+    public Long placeOrderFromCart(User user, List<OrderRequestDto> orderRequestDtos) {
+
+        // 1. 유저의 장바구니 확인
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.CART_NOT_FOUND));
+
+        // 2. 주문 생성
+        Orders order = Orders.builder()
+                .user(user)
+                .status(OrderStatus.ORDERED)
+                .isReturnable(true)
+                .orderProductSnapshots(new ArrayList<>()) // 초기화
+                .build();
+        orderRepository.save(order);
+
+        // 3. 장바구니 내 주문 검증 및 총 주문 금액 계산
+        BigDecimal totalAmount = BigDecimal.ZERO; // 주문 총 금액
+        List<OrderProductSnapshot> snapshots = new ArrayList<>(); // 주문 스냅샷 리스트
+
+        for (OrderRequestDto orderRequest : orderRequestDtos) {
+            Long productInfoId = orderRequest.getProductInfoId();
+            int quantity = orderRequest.getQuantity();
+
+            // 3-1. 장바구니 내 해당 상품 확인
+            CartProduct cartProduct = cart.getCartProducts().stream()
+                    .filter(cp -> cp.getProductInfo().getId().equals(productInfoId))
+                    .findAny()
+                    .orElseThrow(() -> new MadeByException(MadeByErrorCode.CART_PRODUCT_NOT_FOUND));
+
+            // 3-2. 상품 정보 확인
+            ProductInfo productInfo = cartProduct.getProductInfo();
+            Products product = productInfo.getProducts();
+
+            if (!product.isVisible()) {
+                throw new MadeByException(MadeByErrorCode.NO_SELLING_PRODUCT);
+            }
+
+            // 3-3. 품절 및 재고 확인
+            if (productInfo.getStock() <= 0) {
+                throw new MadeByException(MadeByErrorCode.SOLD_OUT);
+            }
+
+            if (productInfo.getStock() < quantity) {
+                throw new MadeByException(MadeByErrorCode.DECREMENT_STOCK_FAILURE);
+            }
+
+            // 3-4. 재고 감소 (동시성 처리)
+            int stockUpdated = productInfoRepository.decrementStock(productInfoId, quantity);
+            if (stockUpdated <= 0) {
+                throw new MadeByException(MadeByErrorCode.DECREMENT_STOCK_FAILURE);
+            }
+
+            // 3-5. 주문 상품 스냅샷 생성
+            OrderProductSnapshot snapshot = OrderProductSnapshot.builder()
+                    .productId(product.getId())
+                    .productName(product.getName())
+                    .productImage(product.getImage())
+                    .productDescription(product.getDescription())
+                    .category(product.getCategory())
+                    .quantity(quantity)
+                    .price(productInfo.getPrice())
+                    .totalAmount(productInfo.getPrice().multiply(BigDecimal.valueOf(quantity)))
+                    .build();
+
+            snapshots.add(snapshot);
+
+            // 총 금액 계산
+            totalAmount = totalAmount.add(snapshot.getTotalAmount());
+        }
+
+        // 4. 주문 상품 스냅샷 저장
+        for (OrderProductSnapshot snapshot : snapshots) {
+            snapshot.setOrders(order);
+            snapshotRepository.save(snapshot);
+            order.getOrderProductSnapshots().add(snapshot); // 주문 객체에 스냅샷 추가
+        }
+
+        // 5. 장바구니에서 주문 완료된 상품 제거
+        for (OrderRequestDto orderRequest : orderRequestDtos) {
+            Long productInfoId = orderRequest.getProductInfoId();
+            cart.removeProduct(cart.getCartProducts().stream()
+                    .filter(cp -> cp.getProductInfo().getId().equals(productInfoId))
+                    .findAny()
+                    .orElseThrow(() -> new MadeByException(MadeByErrorCode.CART_PRODUCT_NOT_FOUND))
+                    .getProductInfo());
+        }
+
+        // 6. 장바구니가 비었으면 삭제
+        if (cart.getCartProducts().isEmpty()) {
+            cartRepository.delete(cart); // 카트 삭제
+            deleteCartCache(user.getId()); // Redis 캐시 동기화
+        }
+
+        return order.getId();
+    }
+
+    // Redis 캐시 삭제
+    private void deleteCartCache(Long userId) {
+        String cacheKey = "cart:" + userId; // 캐시 키 생성
+        redisTemplate.delete(cacheKey); // Redis에서 캐시 삭제
+    }
+
+    @Transactional(readOnly = true)
+    public Orders findOrderById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_ORDER));
+    }
+
+    // 주문 생성(단일 상품 주문)
     @Transactional
     public Long placeOrder(String userEmailHash, Long productInfoId, int quantity) {
         // 1. 유저 확인

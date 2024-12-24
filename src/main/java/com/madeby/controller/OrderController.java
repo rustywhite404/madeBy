@@ -3,6 +3,8 @@ package com.madeby.controller;
 import com.madeby.common.ApiResponse;
 import com.madeby.dto.OrderRequestDto;
 import com.madeby.dto.OrderResponseDto;
+import com.madeby.entity.Orders;
+import com.madeby.entity.User;
 import com.madeby.exception.MadeByErrorCode;
 import com.madeby.exception.MadeByException;
 import com.madeby.security.UserDetailsImpl;
@@ -52,6 +54,24 @@ public class OrderController {
         List<OrderResponseDto> orders = orderService.getOrders(userId, startDate, endDate, cursor, size);
 
         return ResponseEntity.ok(orders);
+    }
+
+    @PostMapping("/cart")
+    public ResponseEntity<OrderResponseDto> placeOrderFromCart(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestBody List<OrderRequestDto> orderRequestDtos) {
+
+        // 인증된 유저 객체
+        User user = userDetails.getUser();
+
+        // 서비스 호출
+        Long orderId = orderService.placeOrderFromCart(user, orderRequestDtos);
+
+        // 주문 응답 생성
+        Orders order = orderService.findOrderById(orderId);
+        OrderResponseDto response = OrderResponseDto.fromEntity(order);
+
+        return ResponseEntity.ok(response);
     }
 
 }

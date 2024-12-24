@@ -27,7 +27,7 @@ public class OrderStatusScheduler {
     private final ProductInfoRepository productInfoRepository;
 
     //@Scheduled(cron = "0 0 0,12,18 * * *") // 매일 00:00, 08:00, 16:00에 실행
-    @Scheduled(cron = "0 */2 * * * *") // 테스트를 위해 2분마다 갱신
+    @Scheduled(cron = "0 */50 * * * *") // 테스트를 위해 50분마다 갱신
     @Transactional
     public void updateOrderStatus() {
         log.info("-------[제품 상태 업데이트 시작]-------");
