@@ -20,6 +20,9 @@ spring:
       address: redis://127.0.0.1:6379
       password: ""
   jackson:
+    time-zone: Asia/Seoul
+    serialization:
+      write-dates-as-timestamps: false
     default-property-inclusion: non_null
 
   mail:
