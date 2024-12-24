@@ -1,5 +1,6 @@
 package com.madeby.controller;
 
+import com.madeby.common.ApiResponse;
 import com.madeby.dto.CartProductRequestDto;
 import com.madeby.dto.CartRequestDto;
 import com.madeby.dto.CartResponseDto;
@@ -21,16 +22,16 @@ public class CartController {
 
     // 장바구니 조회
     @GetMapping
-    public ResponseEntity<CartResponseDto> getCart(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+    public ResponseEntity<Object> getCart(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         Long userId = userDetails.getUser().getId();
         CartResponseDto cart = cartService.getCart(userId);
-        return ResponseEntity.ok(cart);
+        return ResponseEntity.ok(ApiResponse.success(cart));
     }
 
 
     // 장바구니에 상품 추가
     @PostMapping("/add")
-    public ResponseEntity<String> addProduct(
+    public ResponseEntity<Object> addProduct(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @RequestBody CartRequestDto request
     ) {
@@ -42,7 +43,7 @@ public class CartController {
         }
 
         cartService.addProduct(userId, request.getProductInfoId(), request.getQuantity()); // productInfoId 사용
-        return ResponseEntity.ok("상품이 장바구니에 추가되었습니다.");
+        return ResponseEntity.ok(ApiResponse.success("상품이 장바구니에 추가되었습니다."));
     }
 
     // 장바구니에서 상품 삭제
@@ -56,7 +57,7 @@ public class CartController {
 
         cartService.removeProduct(userId, productInfoId); // productInfoId 사용
         CartResponseDto cart = cartService.getCart(userId); // 변경 후 장바구니 상태 조회
-        return ResponseEntity.ok(cart);
+        return ResponseEntity.ok(ApiResponse.success(cart));
     }
 
     // 장바구니 상품 수량 업데이트
@@ -71,7 +72,7 @@ public class CartController {
 
         cartService.updateProductQuantity(userId, cartProductRequest.getProductInfoId(), cartProductRequest.getQuantity()); // productInfoId 사용
         CartResponseDto cart = cartService.getCart(userId); // 변경 후 장바구니 상태 조회
-        return ResponseEntity.ok(cart);
+        return ResponseEntity.ok(ApiResponse.success(cart));
     }
 
 

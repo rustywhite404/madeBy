@@ -29,6 +29,40 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
+
+    @Transactional
+    public void cancelOrder(Long orderId, User user) {
+        // 1. 주문 조회
+        Orders order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_ORDER));
+
+        // 2. 주문 유저 확인
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new MadeByException(MadeByErrorCode.NOT_YOUR_ORDER, "본인의 주문만 취소할 수 있습니다.");
+        }
+
+        // 3. 주문 상태 확인
+        if (!order.getStatus().equals(OrderStatus.ORDERED)) {
+            throw new MadeByException(MadeByErrorCode.CANNOT_CANCEL_ORDER, "주문 상태가 ORDERED일 때만 취소할 수 있습니다.");
+        }
+
+        // 4. 주문 상품 스냅샷을 통해 재고 복구
+        List<OrderProductSnapshot> snapshots = order.getOrderProductSnapshots();
+        for (OrderProductSnapshot snapshot : snapshots) {
+            ProductInfo productInfo = productInfoRepository.findById(snapshot.getProductId())
+                    .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
+
+            // 재고 복구
+            productInfo.setStock(productInfo.getStock() + snapshot.getQuantity());
+        }
+
+        // 5. 주문 상태 변경
+        order.setStatus(OrderStatus.CANCELED);
+    }
+
+
+
+
     //주문 생성(장바구니에서 여러 상품 주문)
     @Transactional
     public Long placeOrderFromCart(User user, List<OrderRequestDto> orderRequestDtos) {
@@ -104,7 +138,6 @@ public class OrderService {
         // 4. 주문 상품 스냅샷 저장
         for (OrderProductSnapshot snapshot : snapshots) {
             snapshot.setOrders(order);
-            snapshotRepository.save(snapshot);
             order.getOrderProductSnapshots().add(snapshot); // 주문 객체에 스냅샷 추가
         }
 

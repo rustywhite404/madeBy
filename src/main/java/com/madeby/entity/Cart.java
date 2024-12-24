@@ -1,5 +1,7 @@
 package com.madeby.entity;
 
+import com.madeby.exception.MadeByErrorCode;
+import com.madeby.exception.MadeByException;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -51,7 +53,7 @@ public class Cart extends Timestamped{
                 return; // 업데이트 완료 후 종료
             }
         }
-        throw new IllegalArgumentException("장바구니에 해당 상품이 없습니다.");
+        throw new MadeByException(MadeByErrorCode.CART_PRODUCT_NOT_FOUND);
     }
 
 }

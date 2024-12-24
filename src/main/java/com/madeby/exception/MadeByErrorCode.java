@@ -30,6 +30,9 @@ public enum MadeByErrorCode {
     MIN_AMOUNT("최소 구매 수량은 1개입니다."),
     CART_PRODUCT_NOT_FOUND("장바구니에 포함된 상품이 아닙니다."),
     CART_NOT_FOUND("장바구니에 상품이 존재하지 않습니다."),
+    CANNOT_CANCEL_ORDER("배송 시작 전에만 주문을 취소하실 수 있습니다."),
+    NOT_YOUR_ORDER("다른 사용자의 주문은 취소하실 수 없습니다."),
+    
 
     DECRYPTION_ERROR("복호화에 실패했습니다."),
     ENCRYPTION_ERROR("복호화에 실패했습니다."),

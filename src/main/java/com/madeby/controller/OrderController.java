@@ -26,6 +26,21 @@ public class OrderController {
 
     private final OrderService orderService;
 
+
+    @DeleteMapping("/{orderId}/cancel")
+    public ResponseEntity<String> cancelOrder(
+            @PathVariable Long orderId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+
+        // 인증된 유저 정보
+        User user = userDetails.getUser();
+
+        // 주문 취소 서비스 호출
+        orderService.cancelOrder(orderId, user);
+
+        return ResponseEntity.ok("주문이 취소되었습니다.");
+    }
+
     @PostMapping
     public
     ResponseEntity<ApiResponse<String>> placeOrder(

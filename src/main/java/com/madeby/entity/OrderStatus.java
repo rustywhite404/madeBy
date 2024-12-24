@@ -7,7 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum OrderStatus {
     ORDERED("주문완료"),
-    CANCELLED("주문취소"),
+    CANCELED("주문취소"),
     SHIPPING("배송중"),
     DELIVERED("배송완료"),
     RETURN_REQUEST("반품신청"),
