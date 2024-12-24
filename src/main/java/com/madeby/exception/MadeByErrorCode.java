@@ -10,6 +10,7 @@ public enum MadeByErrorCode {
 
 
     USER_NOT_FOUND("존재하지 않는 사용자입니다."),
+    USER_NOT_AUTH_INFO("사용자 인증 정보가 존재하지 않습니다."),
     USER_NOT_LOGIN("로그인 후 서비스 이용이 가능합니다."),
     EMAIL_NOT_VERIFIED("이메일 인증이 필요합니다."),
     AUTHENTICATION_FAILED("인증에 실패했습니다."),

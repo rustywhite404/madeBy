@@ -48,7 +48,7 @@ public class UserController {
 
 
     // 회원 정보 조회(이름, 관리자 여부만 리턴)
-    @GetMapping("/user-info")
+    @GetMapping("/user/info")
     @ResponseBody
     public UserInfoDto getUserInfo(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         try {
@@ -69,7 +69,7 @@ public class UserController {
 
 
     // 회원 정보 조회(전체 정보 리턴)
-    @GetMapping("/user-infoAll")
+    @GetMapping("/user/infoAll")
     @ResponseBody
     public UserInfoDto getUserInfoAll(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         User user = userDetails.getUser();
@@ -107,5 +107,23 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("인증이 완료되었습니다. 로그인 해주세요."));
     }
 
+    @DeleteMapping("/user/logout")
+    public ResponseEntity<Object> logout(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (userDetails == null) {
+            ApiResponse<?> errorResponse = ApiResponse.failure("USER_NOT_AUTH_INFO", MadeByErrorCode.USER_NOT_AUTH_INFO.getMessage());
+            return ResponseEntity.status(401).body(errorResponse);
+        }
+
+        // UserDetailsImpl에서 emailHash 추출
+        String emailHash = userDetails.getUser().getEmailHash();
+
+        // Refresh Token 삭제
+        String redisKey = "refreshToken:" + emailHash;
+        if (redisTemplate.hasKey(redisKey)) {
+            redisTemplate.delete(redisKey);
+        }
+
+        return ResponseEntity.ok().body(ApiResponse.success("로그아웃이 완료 되었습니다."));
+    }
 
 }
