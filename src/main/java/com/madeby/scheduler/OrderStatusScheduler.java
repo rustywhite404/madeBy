@@ -4,6 +4,8 @@ import com.madeby.entity.OrderProductSnapshot;
 import com.madeby.entity.OrderStatus;
 import com.madeby.entity.Orders;
 import com.madeby.entity.ProductInfo;
+import com.madeby.exception.MadeByErrorCode;
+import com.madeby.exception.MadeByException;
 import com.madeby.repository.OrderRepository;
 import com.madeby.repository.ProductInfoRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -25,7 +27,8 @@ public class OrderStatusScheduler {
     private final ProductInfoRepository productInfoRepository;
 
     //@Scheduled(cron = "0 0 0,12,18 * * *") // 매일 00:00, 08:00, 16:00에 실행
-    @Scheduled(cron = "0 */5 * * * *") // 테스트를 위해 5분마다 갱신
+    @Scheduled(cron = "0 */2 * * * *") // 테스트를 위해 2분마다 갱신
+    @Transactional
     public void updateOrderStatus() {
         log.info("-------[제품 상태 업데이트 시작]-------");
 
@@ -54,14 +57,14 @@ public class OrderStatusScheduler {
         do {
             orders = orderRepository.findByStatusAndCreatedAtBeforeWithCursor(
                     OrderStatus.ORDERED,
-                    LocalDate.now().minusDays(1).atStartOfDay(), // LocalDateTime으로 변환
+                    LocalDateTime.now().minusDays(1), // LocalDateTime으로 변환
                     lastCursor,
                     batchSize
             );
 
             for (Orders order : orders) {
                 order.setStatus(OrderStatus.SHIPPING);
-                order.setDeliveryStartDate(LocalDate.now());
+                order.setDeliveryStartDate(LocalDateTime.now());
             }
 
             orderRepository.saveAll(orders);
@@ -79,26 +82,30 @@ public class OrderStatusScheduler {
     private void updateToDelivered() {
         Long lastCursor = 0L;
         int batchSize = 100;
-
         List<Orders> orders;
 
         do {
+
+            // 주문일(createdAt)로부터 2일이 지난 데이터 조회
             orders = orderRepository.findByStatusAndCreatedAtBeforeWithCursor(
                     OrderStatus.SHIPPING,
-                    LocalDate.now().minusDays(1).atStartOfDay(), // LocalDateTime으로 변환
+                    LocalDateTime.now().minusDays(2), // 2일 전 시간
                     lastCursor,
                     batchSize
             );
 
             for (Orders order : orders) {
+                log.info("주문 ID: {}, 상태 변경: SHIPPING -> DELIVERED", order.getId());
                 order.setStatus(OrderStatus.DELIVERED);
-                order.setDeliveryEndDate(LocalDate.now());
+                order.setDeliveryEndDate(LocalDateTime.now()); // 배송 완료 시간 기록
             }
 
+            // 변경된 상태를 저장
             orderRepository.saveAll(orders);
 
             if (!orders.isEmpty()) {
-                lastCursor = orders.get(orders.size() - 1).getId();
+                lastCursor = orders.get(orders.size() - 1).getId(); // 마지막 처리된 주문 ID로 커서 업데이트
+                log.info("lastCursor 업데이트: {}", lastCursor);
             }
 
         } while (!orders.isEmpty());
@@ -114,21 +121,26 @@ public class OrderStatusScheduler {
         List<Orders> orders;
 
         do {
+            // 배송 완료일(delivery_end_date)이 1일이 지난 데이터 조회
             orders = orderRepository.findByStatusAndDeliveryEndDateBeforeWithCursor(
                     OrderStatus.DELIVERED,
-                    LocalDate.now().minusDays(1),
+                    LocalDateTime.now().minusDays(1), // 1일 전 기준
                     lastCursor,
                     batchSize
             );
 
             for (Orders order : orders) {
-                order.setReturnable(false);
+                log.info("주문 ID: {}, 기존 반품 가능 여부: {}", order.getId(), order.isReturnable());
+                order.setReturnable(false); // 반품 불가로 변경
+                log.info("주문 ID: {}, 새로운 반품 가능 여부: {}", order.getId(), order.isReturnable());
             }
 
+            // 변경된 상태를 저장
             orderRepository.saveAll(orders);
 
             if (!orders.isEmpty()) {
-                lastCursor = orders.get(orders.size() - 1).getId();
+                lastCursor = orders.get(orders.size() - 1).getId(); // 마지막 커서 업데이트
+                log.info("lastCursor 업데이트: {}", lastCursor);
             }
 
         } while (!orders.isEmpty());
@@ -148,7 +160,7 @@ public class OrderStatusScheduler {
         do {
             orders = orderRepository.findByStatusAndReturnRequestedDateBeforeWithCursor(
                     OrderStatus.RETURN_REQUEST,
-                    LocalDate.now().minusDays(1),
+                    LocalDateTime.now().minusDays(1),
                     lastCursor,
                     batchSize
             );
@@ -156,7 +168,7 @@ public class OrderStatusScheduler {
             for (Orders order : orders) {
                 for (OrderProductSnapshot snapshot : order.getOrderProductSnapshots()) {
                     ProductInfo productInfo = productInfoRepository.findById(snapshot.getProductId())
-                            .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+                            .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
 
                     productInfo.setStock(productInfo.getStock() + snapshot.getQuantity());
                     productInfoRepository.save(productInfo);

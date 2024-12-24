@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Comment;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,13 +33,13 @@ public class Orders extends Timestamped{
     private OrderStatus status;
 
     @Comment(value = "배송 시작일")
-    private LocalDate deliveryStartDate;
+    private LocalDateTime deliveryStartDate;
 
     @Comment(value = "배송 완료일")
-    private LocalDate deliveryEndDate;
+    private LocalDateTime deliveryEndDate;
 
     @Comment(value = "반품 신청일")
-    private LocalDate returnRequestedDate;
+    private LocalDateTime returnRequestedDate;
 
     @Column(nullable = false)
     @Comment(value = "반품 가능 여부")

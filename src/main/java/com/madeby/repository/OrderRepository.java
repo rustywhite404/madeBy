@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -30,7 +29,7 @@ public interface OrderRepository extends JpaRepository<Orders, Long> {
             "ORDER BY o.id ASC")
     List<Orders> findByStatusAndDeliveryEndDateBeforeWithCursor(
             @Param("status") OrderStatus status,
-            @Param("beforeDate") LocalDate beforeDate,
+            @Param("beforeDate") LocalDateTime beforeDate,
             @Param("lastCursor") Long lastCursor,
             @Param("batchSize") int batchSize
     );
@@ -43,7 +42,7 @@ public interface OrderRepository extends JpaRepository<Orders, Long> {
             "ORDER BY o.id ASC")
     List<Orders> findByStatusAndReturnRequestedDateBeforeWithCursor(
             @Param("status") OrderStatus status,
-            @Param("beforeDate") LocalDate beforeDate,
+            @Param("beforeDate") LocalDateTime beforeDate,
             @Param("lastCursor") Long lastCursor,
             @Param("batchSize") int batchSize
     );
