@@ -26,9 +26,20 @@ public class OrderController {
 
     private final OrderService orderService;
 
+    @PostMapping("/{orderId}/return")
+    public ResponseEntity<Object> requestReturn(
+            @PathVariable Long orderId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+
+        User user = userDetails.getUser(); // 인증된 유저 정보
+        orderService.requestReturn(orderId, user);
+
+        return ResponseEntity.ok(ApiResponse.success("반품 신청이 정상적으로 접수 되었습니다."));    
+    }
+
 
     @DeleteMapping("/{orderId}/cancel")
-    public ResponseEntity<String> cancelOrder(
+    public ResponseEntity<Object> cancelOrder(
             @PathVariable Long orderId,
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
@@ -38,7 +49,7 @@ public class OrderController {
         // 주문 취소 서비스 호출
         orderService.cancelOrder(orderId, user);
 
-        return ResponseEntity.ok("주문이 취소되었습니다.");
+        return ResponseEntity.ok(ApiResponse.success("주문이 정상적으로 취소 되었습니다."));
     }
 
     @PostMapping

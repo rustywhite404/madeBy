@@ -32,6 +32,8 @@ public enum MadeByErrorCode {
     CART_NOT_FOUND("장바구니에 상품이 존재하지 않습니다."),
     CANNOT_CANCEL_ORDER("배송 시작 전에만 주문을 취소하실 수 있습니다."),
     NOT_YOUR_ORDER("다른 사용자의 주문은 취소하실 수 없습니다."),
+    CANNOT_RETURN("배송 완료 상태인 상품만 반품 요청이 가능합니다."),
+    RETURN_NOT_ALLOWED("해당 주문은 반품이 불가능합니다. 상세 사유는 고객센터에 문의하세요."),
     
 
     DECRYPTION_ERROR("복호화에 실패했습니다."),

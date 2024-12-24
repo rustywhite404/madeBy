@@ -29,6 +29,31 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
+    @Transactional
+    public void requestReturn(Long orderId, User user) {
+        // 1. 주문 조회
+        Orders order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_ORDER));
+
+        // 2. 주문 유저 확인
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new MadeByException(MadeByErrorCode.NOT_YOUR_ORDER);
+        }
+
+        // 3. 반품 가능 여부 확인: 배송 완료 상태인지 확인
+        if (!order.getStatus().equals(OrderStatus.DELIVERED)) {
+            throw new MadeByException(MadeByErrorCode.CANNOT_RETURN);
+        }
+
+        // 4. 반품 가능 여부 확인: 반품 가능한 주문인지 확인
+        if (!order.isReturnable()) {
+            throw new MadeByException(MadeByErrorCode.RETURN_NOT_ALLOWED);
+        }
+
+        // 4. 반품 요청 처리
+        order.setStatus(OrderStatus.RETURN_REQUEST); // 상태를 반품 요청으로 변경
+        order.setReturnRequestedDate(LocalDateTime.now()); // 반품 요청 날짜 설정
+    }
 
     @Transactional
     public void cancelOrder(Long orderId, User user) {
@@ -38,12 +63,12 @@ public class OrderService {
 
         // 2. 주문 유저 확인
         if (!order.getUser().getId().equals(user.getId())) {
-            throw new MadeByException(MadeByErrorCode.NOT_YOUR_ORDER, "본인의 주문만 취소할 수 있습니다.");
+            throw new MadeByException(MadeByErrorCode.NOT_YOUR_ORDER);
         }
 
         // 3. 주문 상태 확인
         if (!order.getStatus().equals(OrderStatus.ORDERED)) {
-            throw new MadeByException(MadeByErrorCode.CANNOT_CANCEL_ORDER, "주문 상태가 ORDERED일 때만 취소할 수 있습니다.");
+            throw new MadeByException(MadeByErrorCode.CANNOT_CANCEL_ORDER);
         }
 
         // 4. 주문 상품 스냅샷을 통해 재고 복구
@@ -59,9 +84,6 @@ public class OrderService {
         // 5. 주문 상태 변경
         order.setStatus(OrderStatus.CANCELED);
     }
-
-
-
 
     //주문 생성(장바구니에서 여러 상품 주문)
     @Transactional
