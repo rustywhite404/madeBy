@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -86,10 +88,13 @@ public class OrderService {
         if (endDate == null) {
             endDate = LocalDate.now();
         }
+        // LocalDate → LocalDateTime 변환
+        LocalDateTime startDateTime = startDate.atStartOfDay(); // 00:00:00
+        LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX); // 23:59:59.999999999
 
         // 주문 내역 조회
         List<Orders> orders = orderRepository.findOrdersByUserIdAndDateWithCursor(
-                userId, startDate, endDate, cursor, size
+                userId, startDateTime, endDateTime, cursor, size
         );
 
         // 결과가 비어 있으면 예외 발생

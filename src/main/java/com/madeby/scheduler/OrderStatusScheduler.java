@@ -54,7 +54,7 @@ public class OrderStatusScheduler {
         do {
             orders = orderRepository.findByStatusAndCreatedAtBeforeWithCursor(
                     OrderStatus.ORDERED,
-                    LocalDate.now().minusDays(1),
+                    LocalDate.now().minusDays(1).atStartOfDay(), // LocalDateTime으로 변환
                     lastCursor,
                     batchSize
             );
@@ -85,7 +85,7 @@ public class OrderStatusScheduler {
         do {
             orders = orderRepository.findByStatusAndCreatedAtBeforeWithCursor(
                     OrderStatus.SHIPPING,
-                    LocalDate.now().minusDays(1),
+                    LocalDate.now().minusDays(1).atStartOfDay(), // LocalDateTime으로 변환
                     lastCursor,
                     batchSize
             );
@@ -116,7 +116,7 @@ public class OrderStatusScheduler {
         do {
             orders = orderRepository.findByStatusAndDeliveryEndDateBeforeWithCursor(
                     OrderStatus.DELIVERED,
-                    LocalDate.now().minusDays(1), // LocalDate → LocalDateTime 변환
+                    LocalDate.now().minusDays(1),
                     lastCursor,
                     batchSize
             );
