@@ -34,6 +34,23 @@ public class UserController {
     private final UserRepository userRepository;
     private final RedisTemplate<String, String> redisTemplate;
 
+
+    @PutMapping("/user/password")
+    public ResponseEntity<?> changePassword(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestBody Map<String, String> requestBody
+    ) {
+        // 요청에서 현재 비밀번호와 새 비밀번호 추출
+        String currentPassword = requestBody.get("currentPassword");
+        String newPassword = requestBody.get("newPassword");
+
+        // 비밀번호 변경 서비스 호출
+        userService.changePassword(userDetails.getUser(), currentPassword, newPassword);
+
+        // 성공 응답 반환
+        return ResponseEntity.ok(ApiResponse.success("비밀번호가 성공적으로 변경 되었습니다."));
+    }
+
     @PostMapping("/user/signup")
     public ResponseEntity<Object> signup(@Valid @RequestBody SignupRequestDto requestDto, BindingResult bindingResult) throws Exception {
         if (bindingResult.hasErrors()) {

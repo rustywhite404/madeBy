@@ -18,6 +18,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -152,4 +153,25 @@ public class UserService {
     }
 
 
+    @Transactional
+    public void changePassword(User user, String currentPassword, String newPassword) {
+        // 필요한 필드만 로드
+        User currentUser = userRepository.findByIdWithoutOrders(user.getId())
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.USER_NOT_FOUND));
+
+        // 비밀번호 변경 로직
+        if (!passwordEncoder.matches(currentPassword, currentUser.getPassword())) {
+            throw new MadeByException(MadeByErrorCode.INVALID_PASSWORD);
+        }
+        currentUser.setPassword(passwordEncoder.encode(newPassword));
+
+        // Refresh Token 삭제
+        String redisKey = "refreshToken:" + user.getEmailHash();
+        if (redisTemplate.hasKey(redisKey)) {
+            redisTemplate.delete(redisKey);
+        }
+
+        // 엔티티 저장 시 orders 로딩 방지
+        userRepository.saveAndFlush(currentUser); // 즉시 플러시
+    }
 }

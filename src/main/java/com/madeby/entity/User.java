@@ -49,7 +49,7 @@ public class User extends Timestamped{
     @Comment(value = "주소")
     private String address;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Orders> orders = new ArrayList<>();
 
