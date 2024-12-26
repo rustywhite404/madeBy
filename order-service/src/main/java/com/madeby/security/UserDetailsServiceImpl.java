@@ -1,8 +1,8 @@
 package com.madeby.security;
 
+import com.madeBy.shared.exception.MadeByErrorCode;
+import com.madeBy.shared.exception.MadeByException;
 import com.madeby.entity.User;
-import com.madeby.exception.MadeByErrorCode;
-import com.madeby.exception.MadeByException;
 import com.madeby.repository.UserRepository;
 import com.madeby.util.AES256Util;
 import lombok.RequiredArgsConstructor;

@@ -5,15 +5,15 @@ WORKDIR /app
 # Gradle Wrapper와 소스 코드 복사
 COPY . .
 
-# JAR 파일 빌드
-RUN ./gradlew bootJar
+# Gradle 빌드 (Eureka Server만)
+RUN ./gradlew :eureka-server:bootJar
 
 # Step 2: 실행 스테이지
 FROM openjdk:21-jdk-slim
 WORKDIR /app
 
 # 빌드된 JAR 파일 복사
-COPY --from=build /app/build/libs/madeby.jar app.jar
+COPY --from=build /app/eureka-server/build/libs/*.jar app.jar
 
 # 실행 명령어 지정
 ENTRYPOINT ["java", "-jar", "app.jar"]

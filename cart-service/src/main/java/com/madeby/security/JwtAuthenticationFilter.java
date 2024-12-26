@@ -1,7 +1,7 @@
 package com.madeby.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.madeby.common.ApiResponse;
+import com.madeBy.shared.common.ApiResponse;
 import com.madeby.dto.LoginRequestDto;
 import com.madeby.entity.UserRoleEnum;
 import com.madeby.util.JwtUtil;

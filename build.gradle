@@ -5,7 +5,7 @@ plugins {
 }
 
 allprojects {
-    group = 'com.madeBy'
+    group = 'com.madeby'
     version = '0.0.1-SNAPSHOT'
 
     repositories {
@@ -33,14 +33,15 @@ subprojects {
         // 공통 의존성
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
-    }
-
-    tasks.withType(Jar) {
-        // 기본적으로 일반 JAR 파일 생성 가능, 지금은 비활성화
-        enabled = false
+        implementation 'org.springframework.boot:spring-boot-starter-web'
     }
 }
 
 tasks.withType(Test) {
     useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ['-parameters']
+    options.encoding = 'UTF-8'
 }

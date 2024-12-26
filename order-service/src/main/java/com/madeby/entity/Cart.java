@@ -1,7 +1,7 @@
 package com.madeby.entity;
 
-import com.madeby.exception.MadeByErrorCode;
-import com.madeby.exception.MadeByException;
+import com.madeBy.shared.exception.MadeByErrorCode;
+import com.madeBy.shared.exception.MadeByException;
 import jakarta.persistence.*;
 import lombok.*;
 

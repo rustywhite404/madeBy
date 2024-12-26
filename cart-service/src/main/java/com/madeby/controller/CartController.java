@@ -1,6 +1,6 @@
 package com.madeby.controller;
 
-import com.madeby.common.ApiResponse;
+import com.madeBy.shared.common.ApiResponse;
 import com.madeby.dto.CartProductRequestDto;
 import com.madeby.dto.CartRequestDto;
 import com.madeby.dto.CartResponseDto;

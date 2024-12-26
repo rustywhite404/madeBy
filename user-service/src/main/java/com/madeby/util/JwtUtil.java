@@ -1,6 +1,5 @@
 package com.madeby.util;
 
-import com.madeby.config.EnvironmentConfig;
 import com.madeby.entity.UserRoleEnum;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -32,15 +31,13 @@ public class JwtUtil {
 
     // 토큰 만료시간
     private final long TOKEN_TIME = 60 * 60 * 1000L; // 60분
-
-    private final EnvironmentConfig environmentConfig;
     private Key key;
     private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
 
     @PostConstruct
     public void init() {
         // EnvironmentConfig를 사용해 JWT_SECRET_KEY를 로드
-        String secretKey = environmentConfig.getJwtSecretKey();
+        String secretKey = "7Iqk7YyM66W07YOA7L2U65Sp7YG065+9U3ByaW5n6rCV7J2Y7Yqc7YSw7LWc7JuQ67mI7J6F64uI64ukLg==";
         byte[] bytes = Base64.getDecoder().decode(secretKey);
         key = Keys.hmacShaKeyFor(bytes);
     }

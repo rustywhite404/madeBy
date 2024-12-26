@@ -1,15 +1,13 @@
 package com.madeby.service;
 
-import com.madeby.config.EnvironmentConfig;
+import com.madeBy.shared.exception.MadeByErrorCode;
+import com.madeBy.shared.exception.MadeByException;
 import com.madeby.dto.SignupRequestDto;
 import com.madeby.dto.UserInfoDto;
 import com.madeby.entity.User;
 import com.madeby.entity.UserRoleEnum;
-import com.madeby.exception.MadeByErrorCode;
-import com.madeby.exception.MadeByException;
 import com.madeby.repository.UserRepository;
 import com.madeby.util.AES256Util;
-import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +27,6 @@ import java.util.UUID;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EnvironmentConfig envConfig;
     private final RedisTemplate<String, String> redisTemplate;
     private final JavaMailSender mailSender;
 
@@ -59,7 +56,7 @@ public class UserService {
         // 사용자 ROLE 확인
         UserRoleEnum role = UserRoleEnum.USER;
         if (requestDto.isAdmin()) {
-            ADMIN_TOKEN = envConfig.getAdminToken();
+            ADMIN_TOKEN = "rustywhite404admin";
             if (!ADMIN_TOKEN.equals(requestDto.getAdminToken())) {
                 throw new MadeByException(MadeByErrorCode.WRONG_ADMIN_TOKEN);
             }
@@ -110,8 +107,7 @@ public class UserService {
                 "</body>" +
                 "</html>";
 
-        Dotenv dotenv = Dotenv.load();
-        String fromEmail = dotenv.get("FROM_EMAIL");
+        String fromEmail = "windeer_@naver.com";
 
         // MimeMessage 생성
         MimeMessage mimeMessage = mailSender.createMimeMessage();

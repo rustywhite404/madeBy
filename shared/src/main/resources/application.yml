@@ -1,0 +1,8 @@
+spring:
+  jpa:
+    enabled: false
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: never

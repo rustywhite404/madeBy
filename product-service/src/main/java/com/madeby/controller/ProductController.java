@@ -1,9 +1,9 @@
 package com.madeby.controller;
 
+import com.madeBy.shared.exception.MadeByErrorCode;
+import com.madeBy.shared.exception.MadeByException;
 import com.madeby.common.ApiResponse;
 import com.madeby.dto.ProductsDto;
-import com.madeby.exception.MadeByErrorCode;
-import com.madeby.exception.MadeByException;
 import com.madeby.service.ProductsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

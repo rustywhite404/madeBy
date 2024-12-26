@@ -1,10 +1,42 @@
+server:
+  port: 8083
+
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3310/cart_service
+    url: jdbc:mysql://cart-db:3306/cart_service
     username: root
-    password: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
+    password: 1234 # MySQL root 비밀번호
   jpa:
     hibernate:
-      ddl-auto: validate
-  flyway:
-    enabled: true
+      ddl-auto: update
+
+  application:
+    name: cart-service
+  cloud:
+    discovery:
+      enabled: true
+    loadbalancer:
+      enabled: true
+
+  mail:
+    host: smtp.naver.com
+    port: 465
+    username: windeer_@naver.com
+    password: rkgus123
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            enable: true
+
+  eureka:
+    client:
+      service-url:
+        defaultZone: http://eureka-server:8761/eureka/
+    instance:
+      prefer-ip-address: true
+      instance-id: ${spring.application.name}:${spring.application.instance-id:${random.value}}

@@ -1,6 +1,6 @@
 package com.madeBy.shared.exception;
 
-import com.madeby.common.ApiResponse;
+import com.madeBy.shared.common.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

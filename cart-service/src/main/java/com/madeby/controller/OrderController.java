@@ -1,12 +1,12 @@
 package com.madeby.controller;
 
-import com.madeby.common.ApiResponse;
+import com.madeBy.shared.common.ApiResponse;
+import com.madeBy.shared.exception.MadeByErrorCode;
+import com.madeBy.shared.exception.MadeByException;
 import com.madeby.dto.OrderRequestDto;
 import com.madeby.dto.OrderResponseDto;
 import com.madeby.entity.Orders;
 import com.madeby.entity.User;
-import com.madeby.exception.MadeByErrorCode;
-import com.madeby.exception.MadeByException;
 import com.madeby.security.UserDetailsImpl;
 import com.madeby.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ public class OrderController {
         User user = userDetails.getUser(); // 인증된 유저 정보
         orderService.requestReturn(orderId, user);
 
-        return ResponseEntity.ok(ApiResponse.success("반품 신청이 정상적으로 접수 되었습니다."));    
+        return ResponseEntity.ok(ApiResponse.success("반품 신청이 정상적으로 접수 되었습니다."));
     }
 
 

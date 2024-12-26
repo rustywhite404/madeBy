@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.1'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'java-library'
 }
 
 repositories {
@@ -9,14 +10,51 @@ repositories {
     maven { url 'https://repo.spring.io/release' }
 }
 
+ext {
+    set('springCloudVersion', "2024.0.0")
+}
+
 dependencies {
     //공통으로 사용될 의존성이 shared에 모여있음
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.16.1'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
+    //Eureka-client
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    //모놀리식 구조에서 사용했던 의존성 전체(추후 불필요한 부분 제거)
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.15.2'
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.16.1'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+    //runtimeOnly 'com.mysql:mysql-connector-j'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+}
+java {
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc) {
+    options.encoding = 'UTF-8'
+    options.charSet = 'UTF-8'
+    options.addStringOption('Xdoclint:none', '-quiet') // Javadoc 경고 억제
 }
