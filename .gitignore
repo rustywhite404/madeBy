@@ -4,6 +4,13 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+!/api-gateway/
+!/cart-service/
+!/eureka-server/
+!/order-service/
+!/product-service/
+!/shared/
+!/user-service/
 
 ### STS ###
 .apt_generated
