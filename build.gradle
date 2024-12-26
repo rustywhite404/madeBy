@@ -25,17 +25,19 @@ subprojects {
 
     dependencyManagement {
         imports {
-            mavenBom "org.springframework.boot:spring-boot-dependencies:3.4.1"
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
         }
     }
 
     dependencies {
         // 공통 의존성
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
     }
 
     tasks.withType(Jar) {
-        // 기본적으로 일반 JAR 파일 생성 가능
-        enabled = true
+        // 기본적으로 일반 JAR 파일 생성 가능, 지금은 비활성화
+        enabled = false
     }
 }
 

@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':shared') // 공통 모듈 참조
+    implementation 'io.github.cdimascio:java-dotenv:5.2.2'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.15.2'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+}
+
+bootJar {
+    archiveFileName = "${project.name}.jar" // 모듈 이름을 JAR 파일 이름으로 설정
+}

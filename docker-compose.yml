@@ -11,6 +11,51 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql # MySQL 데이터 저장
 
+  user-db:
+    image: mysql:8.0
+    container_name: user-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
+      MYSQL_DATABASE: user_service
+    ports:
+      - "3309:3306" # user-service용 MySQL 포트
+    volumes:
+      - user-db-data:/var/lib/mysql
+
+  cart-db:
+    image: mysql:8.0
+    container_name: cart-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
+      MYSQL_DATABASE: cart_service
+    ports:
+      - "3310:3306" # cart-service용 MySQL 포트
+    volumes:
+      - cart-db-data:/var/lib/mysql
+
+  order-db:
+    image: mysql:8.0
+    container_name: order-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
+      MYSQL_DATABASE: order_service
+    ports:
+      - "3311:3306" # order-service용 MySQL 포트
+    volumes:
+      - order-db-data:/var/lib/mysql
+
+  product-db:
+    image: mysql:8.0
+    container_name: product-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
+      MYSQL_DATABASE: product_service
+    ports:
+      - "3312:3306" # product-service용 MySQL 포트
+    volumes:
+      - product-db-data:/var/lib/mysql
+
+
   redis:
     image: redis:7.0
     container_name: redis-container
@@ -42,4 +87,8 @@ services:
       - prod.env
 volumes:
   mysql-data:
+  user-db-data:
+  cart-db-data:
+  order-db-data:
+  product-db-data:
   redis-data:

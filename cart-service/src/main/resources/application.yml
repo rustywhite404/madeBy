@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3310/cart_service
+    username: root
+    password: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
