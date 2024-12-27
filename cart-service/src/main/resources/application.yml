@@ -5,7 +5,7 @@ spring:
   application:
     name: cart-service
   datasource:
-    url: jdbc:mysql://cart-db:3310/cart_service
+    url: jdbc:mysql://cart-db:3306/cart_service
     username: root
     password: 1234 # MySQL root 비밀번호
   jpa:

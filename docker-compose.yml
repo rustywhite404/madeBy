@@ -104,7 +104,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
       MYSQL_DATABASE: user_service
     ports:
-      - "3309:3309" # user-service용 MySQL 포트
+      - "3309:3306" # user-service용 MySQL 포트
     networks:
       - app-network
     volumes:
@@ -117,7 +117,7 @@ services:
       MYSQL_ROOT_PASSWORD: 1234
       MYSQL_DATABASE: cart_service
     ports:
-      - "3310:3310" # cart-service용 MySQL 포트
+      - "3310:3306" # cart-service용 MySQL 포트
     networks:
       - app-network
     healthcheck:
@@ -136,7 +136,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
       MYSQL_DATABASE: order_service
     ports:
-      - "3311:3311" # order-service용 MySQL
+      - "3311:3306" # order-service용 MySQL
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
@@ -155,7 +155,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
       MYSQL_DATABASE: product_service
     ports:
-      - "3312:3312" # product-service용 MySQL 포트
+      - "3312:3306" # product-service용 MySQL 포트
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s

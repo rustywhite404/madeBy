@@ -5,7 +5,7 @@ spring:
   application:
     name: order-service
   datasource:
-    url: jdbc:mysql://order-db:3311/order_service
+    url: jdbc:mysql://order-db:3306/order_service
     username: root
     password: 1234 # MySQL root 비밀번호
   jpa:

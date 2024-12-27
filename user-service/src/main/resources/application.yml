@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://user-db:3309/user_service
+    url: jdbc:mysql://user-db:3306/user_service
     username: root
     password: 1234 # MySQL root 비밀번호
   jpa:
