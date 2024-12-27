@@ -2,22 +2,16 @@ server:
   port: 8083
 
 spring:
+  application:
+    name: cart-service
   datasource:
-    url: jdbc:mysql://cart-db:3306/cart_service
+    url: jdbc:mysql://cart-db:3310/cart_service
     username: root
     password: 1234 # MySQL root 비밀번호
   jpa:
     hibernate:
       ddl-auto: update
-
-  application:
-    name: cart-service
-  cloud:
-    discovery:
-      enabled: true
-    loadbalancer:
-      enabled: true
-
+    database-platform: org.hibernate.dialect.MySQLDialect
   mail:
     host: smtp.naver.com
     port: 465
@@ -33,10 +27,19 @@ spring:
           ssl:
             enable: true
 
-  eureka:
-    client:
-      service-url:
-        defaultZone: http://eureka-server:8761/eureka/
-    instance:
-      prefer-ip-address: true
-      instance-id: ${spring.application.name}:${spring.application.instance-id:${random.value}}
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    non-secure-port-enabled: true
+    metadata-map:
+      instanceId: ${spring.application.name}:${random.value}
+
+

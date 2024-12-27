@@ -2,22 +2,16 @@ server:
   port: 8085
 
 spring:
+  application:
+    name: product-service
+
   datasource:
-    url: jdbc:mysql://product-db:3306/product_service
+    url: jdbc:mysql://product-db:3312/product_service
     username: root
     password: 1234 # MySQL root 비밀번호
   jpa:
     hibernate:
       ddl-auto: update
-
-  application:
-    name: product-service
-  cloud:
-    discovery:
-      enabled: true
-    loadbalancer:
-      enabled: true
-
   mail:
     host: smtp.naver.com
     port: 465
@@ -33,10 +27,20 @@ spring:
           ssl:
             enable: true
 
-  eureka:
-    client:
-      service-url:
-        defaultZone: http://eureka-server:8761/eureka/
-    instance:
-      prefer-ip-address: true
-      instance-id: ${spring.application.name}:${spring.application.instance-id:${random.value}}
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    non-secure-port-enabled: true
+    metadata-map:
+      instanceId: ${spring.application.name}:${random.value}
+
+
+

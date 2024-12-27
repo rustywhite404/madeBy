@@ -19,6 +19,7 @@ dependencies {
 
     //Eureka-client
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
     //모놀리식 구조에서 사용했던 의존성 전체(추후 불필요한 부분 제거)

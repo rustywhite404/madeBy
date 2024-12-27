@@ -5,8 +5,8 @@ WORKDIR /app
 # Gradle Wrapper와 소스 코드 복사
 COPY . .
 
-# Gradle 빌드 (Eureka Server만)
-RUN ./gradlew :eureka-server:bootJar
+# Gradle 빌드
+RUN ./gradlew build
 
 # Step 2: 실행 스테이지
 FROM openjdk:21-jdk-slim

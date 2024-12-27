@@ -7,6 +7,14 @@ services:
     container_name: eureka-server
     ports:
       - "8761:8761"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://eureka-server:8761/eureka/" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+    networks:
+      - app-network
 
   user-service:
     build:
@@ -24,7 +32,9 @@ services:
     depends_on:
       - eureka-server
     ports:
-      - "8082:8080"
+      - "8082:8082"
+    networks:
+      - app-network
 
   cart-service:
     container_name: cart-service
@@ -43,7 +53,9 @@ services:
       - eureka-server
       - cart-db
     ports:
-      - "8083:8080"
+      - "8083:8083"
+    networks:
+      - app-network
 
   order-service:
     build:
@@ -61,7 +73,9 @@ services:
     depends_on:
       - eureka-server
     ports:
-      - "8084:8080"
+      - "8084:8084"
+    networks:
+      - app-network
 
   product-service:
     build:
@@ -79,7 +93,9 @@ services:
     depends_on:
       - eureka-server
     ports:
-      - "8085:8080"
+      - "8085:8085"
+    networks:
+      - app-network
 
   user-db:
     image: mysql:8.0
@@ -88,7 +104,9 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
       MYSQL_DATABASE: user_service
     ports:
-      - "3309:3306" # user-service용 MySQL 포트
+      - "3309:3309" # user-service용 MySQL 포트
+    networks:
+      - app-network
     volumes:
       - user-db-data:/var/lib/mysql
 
@@ -99,11 +117,15 @@ services:
       MYSQL_ROOT_PASSWORD: 1234
       MYSQL_DATABASE: cart_service
     ports:
-      - "3310:3306" # cart-service용 MySQL 포트
+      - "3310:3310" # cart-service용 MySQL 포트
+    networks:
+      - app-network
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
       retries: 3
+      start_period: 30s
+      timeout: 5s
     volumes:
       - cart-db-data:/var/lib/mysql
 
@@ -114,9 +136,17 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
       MYSQL_DATABASE: order_service
     ports:
-      - "3311:3306" # order-service용 MySQL 포트
+      - "3311:3311" # order-service용 MySQL
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      retries: 3
+      start_period: 30s
+      timeout: 5s
     volumes:
       - order-db-data:/var/lib/mysql
+    networks:
+      - app-network
 
   product-db:
     image: mysql:8.0
@@ -125,9 +155,17 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
       MYSQL_DATABASE: product_service
     ports:
-      - "3312:3306" # product-service용 MySQL 포트
+      - "3312:3312" # product-service용 MySQL 포트
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      retries: 3
+      start_period: 30s
+      timeout: 5s
     volumes:
       - product-db-data:/var/lib/mysql
+    networks:
+      - app-network
 
 
   redis:
@@ -139,6 +177,8 @@ services:
     command: ["redis-server", "--appendonly", "yes"] # 영속성을 위한 AOF 설정
     volumes:
       - redis-data:/data # Redis 데이터 영속성
+    networks:
+      - app-network
 
 volumes:
   mysql-data:
@@ -147,3 +187,7 @@ volumes:
   order-db-data:
   product-db-data:
   redis-data:
+
+networks:
+  app-network:
+    driver: bridge
