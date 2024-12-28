@@ -15,32 +15,33 @@ ext {
 }
 
 dependencies {
-    //공통으로 사용될 의존성이 shared에 모여있음
-    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+    // 공통적으로 사용되는 의존성을 api로 설정
+    api 'org.springframework.cloud:spring-cloud-starter-openfeign' // Feign 클라이언트
+    api 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client' // Eureka 클라이언트
+    api 'org.springframework.boot:spring-boot-starter-data-jpa' // JPA (Hibernate 포함)
+    api 'org.springframework.boot:spring-boot-starter-validation' // Validation (Bean 검증)
+    api 'org.springframework.boot:spring-boot-starter-data-redis' // Redis
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310' // Java 8 Date/Time 직렬화 지원
 
-    //Eureka-client
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-
-    //모놀리식 구조에서 사용했던 의존성 전체(추후 불필요한 부분 제거)
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.15.2'
-    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
-
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.16.1'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-
+    // JJWT 관련 의존성은 전이적으로 제공되어야 하므로 api로 설정
+    api 'io.jsonwebtoken:jjwt-api:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
-    implementation 'org.springframework.boot:spring-boot-starter-mail'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    compileOnly 'org.projectlombok:lombok'
-    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
-    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // 이메일 전송 및 기타 설정
+    api 'org.springframework.boot:spring-boot-starter-mail' // 이메일 전송
+
+    // 로깅 및 JSON 처리
+    api 'com.fasterxml.jackson.core:jackson-databind:2.16.1' // Jackson
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.15.2' // Hibernate 직렬화
+
+    // Lombok 및 개발/테스트용 의존성
+    api 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    api 'com.mysql:mysql-connector-j' // MySQL 드라이버
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose' // Docker Compose 지원
+    testImplementation 'org.springframework.boot:spring-boot-starter-test' // 테스트 의존성
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // JUnit 플랫폼 런처
 
 }
 java {
