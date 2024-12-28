@@ -35,7 +35,7 @@ public class UserController {
     private final UserRepository userRepository;
     private final RedisTemplate<String, String> redisTemplate;
 
-    @GetMapping("/{userId}")
+    @GetMapping("/user/{userId}")
     public UserResponseDto getUserById(@PathVariable Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.USER_NOT_FOUND));

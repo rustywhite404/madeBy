@@ -37,9 +37,12 @@ eureka:
   instance:
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
-    #    prefer-ip-address: true
+    prefer-ip-address: true
     instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
     non-secure-port-enabled: true
     metadata-map:
       instanceId: ${spring.application.name}:${random.value}
-    hostname: localhost  # 환경에 따라 호스트네임 설정
+
+logging:
+  level:
+    org.springframework.web: DEBUG

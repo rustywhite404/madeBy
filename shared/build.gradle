@@ -23,7 +23,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
     //모놀리식 구조에서 사용했던 의존성 전체(추후 불필요한 부분 제거)
-    implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.15.2'
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 
@@ -36,7 +35,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
     runtimeOnly 'com.mysql:mysql-connector-j'

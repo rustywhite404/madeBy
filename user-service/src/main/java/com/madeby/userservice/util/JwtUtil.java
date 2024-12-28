@@ -1,4 +1,4 @@
-package com.madeBy.shared.util;
+package com.madeby.userservice.util;
 
 import com.madeBy.shared.entity.UserRoleEnum;
 import io.jsonwebtoken.*;

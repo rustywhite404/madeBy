@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -42,10 +41,4 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.failure(MadeByErrorCode.INTERNAL_SERVER_ERROR.name(), MadeByErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
     }
 
-    @ExceptionHandler(AuthenticationCredentialsNotFoundException.class)
-    public ResponseEntity<ApiResponse<?>> handleAuthenticationCredentialsNotFoundException(AuthenticationCredentialsNotFoundException ex) {
-        log.info("인증 실패: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.failure("AUTHENTICATION_FAILED", ex.getMessage()));
-    }
 }
