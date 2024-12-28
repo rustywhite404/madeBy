@@ -9,7 +9,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 //@EnableJpaAuditing //Test 코드 실행 시 방해가 되어서 JpaConfig로 따로 뺌
 @SpringBootApplication
-@EnableScheduling
 @EnableDiscoveryClient
 @EnableFeignClients
 @ComponentScan(basePackages = {"com.madeBy.shared", "com.madeby.userservice"})

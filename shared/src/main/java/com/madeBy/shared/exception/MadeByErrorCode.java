@@ -20,6 +20,7 @@ public enum MadeByErrorCode {
     DUPLICATED_NUMBER("이미 사용중인 핸드폰 번호입니다."),
     WRONG_ADMIN_TOKEN("잘못된 관리자 암호입니다. 올바른 관리자 암호로 가입을 시도해주세요."),
     INVALID_PASSWORD("잘못된 비밀번호입니다."),
+    DUPLICATED_DATA("중복된 데이터가 존재합니다."),
 
     NO_PRODUCT("상품이 존재하지 않습니다."),
     NO_SELLING_PRODUCT("현재 판매중인 상품이 아닙니다."),

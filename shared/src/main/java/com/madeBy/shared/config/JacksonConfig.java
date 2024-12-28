@@ -1,7 +1,11 @@
 package com.madeBy.shared.config;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
@@ -14,10 +18,14 @@ public class JacksonConfig {
      * 이를 처리하지 않으면 JSON 변환 시 예외가 발생하거나
      * Timestamp 형식으로 잘못 변환될 수 있음.
      */
-    private final ObjectMapper objectMapper;
 
-    public JacksonConfig(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-        objectMapper.registerModule(new JavaTimeModule()); // JavaTimeModule 등록
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper;
     }
+
 }

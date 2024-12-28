@@ -1,5 +1,6 @@
 package com.madeby.userservice.service;
 
+
 import com.madeBy.shared.entity.UserRoleEnum;
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
@@ -11,6 +12,7 @@ import com.madeby.userservice.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -23,35 +25,38 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RedisTemplate<String, String> redisTemplate;
+
     private final JavaMailSender mailSender;
 
     // ADMIN_TOKEN
     private String ADMIN_TOKEN;
 
+    @Transactional
     public void signup(SignupRequestDto requestDto) throws Exception {
         String password = passwordEncoder.encode(requestDto.getPassword());
-
-        // email 중복확인
-        String encryptedEmail = AES256Util.encryptWithIV(requestDto.getEmail());
-        Optional<User> checkEmail = userRepository.findByEmail(encryptedEmail);
-        if (checkEmail.isPresent()) {
-            throw new MadeByException(MadeByErrorCode.DUPLICATED_EMAIL);
-        }
 
         // 비교용 해시 생성
         String emailHash = AES256Util.hashEmail(requestDto.getEmail());
 
-        // 핸드폰번호 중복확인
-        String encryptedNumber = AES256Util.encryptWithIV(requestDto.getNumber());
-        Optional<User> checkNumber = userRepository.findByNumber(encryptedNumber);
-        if (checkNumber.isPresent()) {
-            throw new MadeByException(MadeByErrorCode.DUPLICATED_NUMBER);
+        // 이메일 중복 확인 (해시값 기준)
+        Optional<User> checkEmail = userRepository.findByEmailHash(emailHash);
+        if (checkEmail.isPresent()) {
+            throw new MadeByException(MadeByErrorCode.DUPLICATED_EMAIL);
         }
+
+        // 이메일 암호화
+        String encryptedEmail = AES256Util.encryptWithIV(requestDto.getEmail());
+
+        String encryptedNumber = AES256Util.encryptWithIV(requestDto.getNumber());
+
+        //TODO
+        // - 핸드폰 번호도 암호화와 동일하게 number_hash를 만들어서 대조해야 중복 가입 방지 가능
 
         // 사용자 ROLE 확인
         UserRoleEnum role = UserRoleEnum.USER;
@@ -100,7 +105,7 @@ public class UserService {
                 "<head><title>Email 인증</title></head>" +
                 "<body>" +
                 "<h2>이 링크를 누르면 인증이 완료됩니다</h2>" +
-                "<form action='http://localhost:8080/api/user/auth/" + id + "/" + verificationCode + "' method='POST'>" +
+                "<form action='http://localhost:9000/api/user/auth/" + id + "/" + verificationCode + "' method='POST'>" +
                 "<button type='submit' style='background-color:#4CAF50; border:none; color:white; padding:10px 20px; text-align:center; " +
                 "text-decoration:none; display:inline-block; font-size:16px; margin:10px 0; cursor:pointer; border-radius:5px;'>Verify</button>" +
                 "</form>" +

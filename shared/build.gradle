@@ -28,9 +28,6 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
-    // 이메일 전송 및 기타 설정
-    api 'org.springframework.boot:spring-boot-starter-mail' // 이메일 전송
-
     // 로깅 및 JSON 처리
     api 'com.fasterxml.jackson.core:jackson-databind:2.16.1' // Jackson
     api 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.15.2' // Hibernate 직렬화
@@ -41,11 +38,16 @@ dependencies {
     api 'com.mysql:mysql-connector-j' // MySQL 드라이버
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose' // Docker Compose 지원
     testImplementation 'org.springframework.boot:spring-boot-starter-test' // 테스트 의존성
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // JUnit 플랫폼 런처
 
 }
 java {
     withSourcesJar()
+}
+
+tasks.test {
+    useJUnitPlatform() // JUnit 5 사용 설정
 }
 
 tasks.withType(JavaCompile) {

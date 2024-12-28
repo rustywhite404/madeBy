@@ -1,25 +1,29 @@
 server:
-  port: 8084
+  port: 8082
 
 spring:
-  application:
-    name: order-service
+  data:
+    redis:
+      host: localhost
+      port: 6379       # Redis 서버의 포트 번호
+      password: ""     # Redis 서버의 비밀번호 (없다면 빈 문자열)
+      database: 0      # 사용할 Redis 데이터베이스 인덱스
   datasource:
-    url: jdbc:mysql://madeby-db:3306/order_service
+    url: jdbc:mysql://localhost:3309/user_service
     username: root
     password: 1234 # MySQL root 비밀번호
-    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
-      hibernate.dialect: org.hibernate.dialect.MySQL8Dialect  # MySQL 8에 적합한 Dialect
+  application:
+    name: user_service
 
 eureka:
   client:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://eureka-server:8761/eureka/
+      defaultZone: http://localhost:8761/eureka/
   instance:
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30

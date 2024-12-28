@@ -16,4 +16,7 @@ dependencies {
     implementation project(':shared') // 공통 모듈 참조
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
+    // 이메일 전송 및 기타 설정
+    implementation 'org.springframework.boot:spring-boot-starter-mail' // 이메일 전송
+
 }
