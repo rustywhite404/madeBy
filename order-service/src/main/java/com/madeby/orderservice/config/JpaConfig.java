@@ -1,4 +1,4 @@
-package com.madeBy.shared.config;
+package com.madeby.orderservice.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
