@@ -1,7 +1,5 @@
 package com.madeby.cartservice.dto;
 
-import com.madeby.cartservice.entity.OrderProductSnapshot;
-import com.madeby.cartservice.entity.Orders;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,26 +25,4 @@ public class OrderResponseDto {
     private boolean isReturnable;
     private List<OrderProductSnapshotDto> products;
 
-    public static OrderResponseDto fromEntity(Orders order) {
-        // Null-safe snapshot 처리
-        List<OrderProductSnapshot> snapshots = Optional.ofNullable(order.getOrderProductSnapshots())
-                .orElse(Collections.emptyList());
-
-        // TotalAmount 계산
-        BigDecimal totalAmount = snapshots.stream()
-                .map(OrderProductSnapshot::getTotalAmount)
-                .filter(Objects::nonNull) // Null 값 필터링
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        return OrderResponseDto.builder()
-                .orderId(order.getId())
-                .status(order.getStatus().name())
-                .totalAmount(totalAmount)
-                .orderDate(order.getCreatedAt().toLocalDate())
-                .isReturnable(order.isReturnable())
-                .products(snapshots.stream()
-                        .map(OrderProductSnapshotDto::fromEntity)
-                        .toList())
-                .build();
-    }
 }

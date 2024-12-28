@@ -2,6 +2,8 @@ package com.madeby.orderservice.service;
 
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
+import com.madeby.orderservice.client.CartServiceClient;
+import com.madeby.orderservice.dto.CartResponseDto;
 import com.madeby.orderservice.dto.OrderRequestDto;
 import com.madeby.orderservice.dto.OrderResponseDto;
 import com.madeby.orderservice.entity.*;
@@ -25,18 +27,17 @@ public class OrderService {
     private final ProductInfoRepository productInfoRepository;
     private final OrderRepository orderRepository;
     private final OrderProductSnapshotRepository snapshotRepository;
-    private final UserRepository userRepository;
-    private final CartRepository cartRepository;
+    private final CartServiceClient cartServiceClient;
     private final RedisTemplate<String, Object> redisTemplate;
 
     @Transactional
-    public void requestReturn(Long orderId, User user) {
+    public void requestReturn(Long orderId, Long userId) {
         // 1. 주문 조회
         Orders order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_ORDER));
 
         // 2. 주문 유저 확인
-        if (!order.getUser().getId().equals(user.getId())) {
+        if (!order.getUserId().equals(userId)) {
             throw new MadeByException(MadeByErrorCode.NOT_YOUR_ORDER);
         }
 
@@ -56,13 +57,13 @@ public class OrderService {
     }
 
     @Transactional
-    public void cancelOrder(Long orderId, User user) {
+    public void cancelOrder(Long orderId, Long userId) {
         // 1. 주문 조회
         Orders order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_ORDER));
 
         // 2. 주문 유저 확인
-        if (!order.getUser().getId().equals(user.getId())) {
+        if (!order.getUserId().equals(userId)) {
             throw new MadeByException(MadeByErrorCode.NOT_YOUR_ORDER);
         }
 
@@ -87,22 +88,23 @@ public class OrderService {
 
     //주문 생성(장바구니에서 여러 상품 주문)
     @Transactional
-    public Long placeOrderFromCart(User user, List<OrderRequestDto> orderRequestDtos) {
+    public Long placeOrderFromCart(Long userId, List<OrderRequestDto> orderRequestDtos) {
 
-        // 1. 유저의 장바구니 확인
-        Cart cart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new MadeByException(MadeByErrorCode.CART_NOT_FOUND));
+        // 1. 유저 검증 로직 제거 (API Gateway가 이미 검증함)
 
-        // 2. 주문 생성
+        // 2. 유저의 장바구니 확인
+        CartResponseDto cart = cartServiceClient.getCartByUserId(userId);
+
+        // 3. 주문 생성
         Orders order = Orders.builder()
-                .user(user)
+                .userId(userId) // userId 설정
                 .status(OrderStatus.ORDERED)
                 .isReturnable(true)
                 .orderProductSnapshots(new ArrayList<>()) // 초기화
                 .build();
         orderRepository.save(order);
 
-        // 3. 장바구니 내 주문 검증 및 총 주문 금액 계산
+        // 4. 장바구니 내 주문 검증 및 총 주문 금액 계산
         BigDecimal totalAmount = BigDecimal.ZERO; // 주문 총 금액
         List<OrderProductSnapshot> snapshots = new ArrayList<>(); // 주문 스냅샷 리스트
 
@@ -110,21 +112,16 @@ public class OrderService {
             Long productInfoId = orderRequest.getProductInfoId();
             int quantity = orderRequest.getQuantity();
 
-            // 3-1. 장바구니 내 해당 상품 확인
-            CartProduct cartProduct = cart.getCartProducts().stream()
-                    .filter(cp -> cp.getProductInfo().getId().equals(productInfoId))
-                    .findAny()
-                    .orElseThrow(() -> new MadeByException(MadeByErrorCode.CART_PRODUCT_NOT_FOUND));
-
-            // 3-2. 상품 정보 확인
-            ProductInfo productInfo = cartProduct.getProductInfo();
+            // 4-2. 상품 정보 확인
+            ProductInfo productInfo = productInfoRepository.findById(productInfoId)
+                    .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
             Products product = productInfo.getProducts();
 
             if (!product.isVisible()) {
                 throw new MadeByException(MadeByErrorCode.NO_SELLING_PRODUCT);
             }
 
-            // 3-3. 품절 및 재고 확인
+            // 5. 품절 및 재고 확인
             if (productInfo.getStock() <= 0) {
                 throw new MadeByException(MadeByErrorCode.SOLD_OUT);
             }
@@ -133,13 +130,13 @@ public class OrderService {
                 throw new MadeByException(MadeByErrorCode.DECREMENT_STOCK_FAILURE);
             }
 
-            // 3-4. 재고 감소 (동시성 처리)
+            // 6. 재고 감소 (동시성 처리)
             int stockUpdated = productInfoRepository.decrementStock(productInfoId, quantity);
             if (stockUpdated <= 0) {
                 throw new MadeByException(MadeByErrorCode.DECREMENT_STOCK_FAILURE);
             }
 
-            // 3-5. 주문 상품 스냅샷 생성
+            // 7. 주문 상품 스냅샷 생성
             OrderProductSnapshot snapshot = OrderProductSnapshot.builder()
                     .productId(product.getId())
                     .productName(product.getName())
@@ -157,36 +154,23 @@ public class OrderService {
             totalAmount = totalAmount.add(snapshot.getTotalAmount());
         }
 
-        // 4. 주문 상품 스냅샷 저장
+        // 8. 주문 상품 스냅샷 저장
         for (OrderProductSnapshot snapshot : snapshots) {
             snapshot.setOrders(order);
             order.getOrderProductSnapshots().add(snapshot); // 주문 객체에 스냅샷 추가
         }
 
-        // 5. 장바구니에서 주문 완료된 상품 제거
+        // 9. 장바구니에서 주문 완료된 상품 제거
         for (OrderRequestDto orderRequest : orderRequestDtos) {
-            Long productInfoId = orderRequest.getProductInfoId();
-            cart.removeProduct(cart.getCartProducts().stream()
-                    .filter(cp -> cp.getProductInfo().getId().equals(productInfoId))
-                    .findAny()
-                    .orElseThrow(() -> new MadeByException(MadeByErrorCode.CART_PRODUCT_NOT_FOUND))
-                    .getProductInfo());
+            cartServiceClient.removeProductFromCart(userId, orderRequest.getProductInfoId());
         }
 
-        // 6. 장바구니가 비었으면 삭제
-        if (cart.getCartProducts().isEmpty()) {
-            cartRepository.delete(cart); // 카트 삭제
-            deleteCartCache(user.getId()); // Redis 캐시 동기화
-        }
+        // 6. 장바구니 비우기 (Cart-Service 호출)
+        cartServiceClient.clearCart(userId);
 
         return order.getId();
     }
 
-    // Redis 캐시 삭제
-    private void deleteCartCache(Long userId) {
-        String cacheKey = "cart:" + userId; // 캐시 키 생성
-        redisTemplate.delete(cacheKey); // Redis에서 캐시 삭제
-    }
 
     @Transactional(readOnly = true)
     public Orders findOrderById(Long orderId) {
@@ -196,10 +180,8 @@ public class OrderService {
 
     // 주문 생성(단일 상품 주문)
     @Transactional
-    public Long placeOrder(String userEmailHash, Long productInfoId, int quantity) {
-        // 1. 유저 확인
-        User user = userRepository.findByEmailHash(userEmailHash)
-                .orElseThrow(() -> new MadeByException(MadeByErrorCode.USER_NOT_LOGIN));
+    public Long placeOrder(Long userId, Long productInfoId, int quantity) {
+        // 1. 유저 검증 로직 제거 (API Gateway가 이미 검증함)
 
         // 2. 상품 및 옵션 확인
         ProductInfo productInfo = productInfoRepository.findById(productInfoId)
@@ -223,7 +205,7 @@ public class OrderService {
 
         // 5. 주문 생성 및 저장
         Orders order = Orders.builder()
-                .user(user)
+                .userId(userId)
                 .status(OrderStatus.ORDERED)
                 .isReturnable(true) // 기본값으로 설정
                 .build();

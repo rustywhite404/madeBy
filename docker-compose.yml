@@ -1,5 +1,4 @@
 services:
-
   eureka-server:
     build:
       context: .
@@ -25,12 +24,13 @@ services:
     container_name: user-service
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:mysql://user-db:3306/user_service
+      SPRING_DATASOURCE_URL: jdbc:mysql://madeby-db:3306/user_service
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       EUREKA_SERVER_URL: http://eureka-server:8761/eureka
     depends_on:
       - eureka-server
+      - madeby-db
     ports:
       - "8082:8082"
     networks:
@@ -45,13 +45,13 @@ services:
       - .env  # .env 파일을 Docker 컨테이너에 로드
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:mysql://cart-db:3306/cart_service
+      SPRING_DATASOURCE_URL: jdbc:mysql://madeby-db:3306/cart_service
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       EUREKA_SERVER_URL: http://eureka-server:8761/eureka
     depends_on:
       - eureka-server
-      - cart-db
+      - madeby-db
     ports:
       - "8083:8083"
     networks:
@@ -66,12 +66,13 @@ services:
     container_name: order-service
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:mysql://order-db:3306/order_service
+      SPRING_DATASOURCE_URL: jdbc:mysql://madeby-db:3306/order_service
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       EUREKA_SERVER_URL: http://eureka-server:8761/eureka
     depends_on:
       - eureka-server
+      - madeby-db
     ports:
       - "8084:8084"
     networks:
@@ -86,87 +87,31 @@ services:
     container_name: product-service
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:mysql://product-db:3306/product_service
+      SPRING_DATASOURCE_URL: jdbc:mysql://madeby-db:3306/product_service
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       EUREKA_SERVER_URL: http://eureka-server:8761/eureka
     depends_on:
       - eureka-server
+      - madeby-db
     ports:
       - "8085:8085"
     networks:
       - app-network
 
-  user-db:
+  madeby-db:
     image: mysql:8.0
-    container_name: user-db
+    container_name: madeby-db
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
-      MYSQL_DATABASE: user_service
+      MYSQL_DATABASE: default_db
     ports:
       - "3309:3306" # user-service용 MySQL 포트
     networks:
       - app-network
     volumes:
-      - user-db-data:/var/lib/mysql
-
-  cart-db:
-    image: mysql:8.0
-    container_name: cart-db
-    environment:
-      MYSQL_ROOT_PASSWORD: 1234
-      MYSQL_DATABASE: cart_service
-    ports:
-      - "3310:3306" # cart-service용 MySQL 포트
-    networks:
-      - app-network
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      interval: 10s
-      retries: 3
-      start_period: 30s
-      timeout: 5s
-    volumes:
-      - cart-db-data:/var/lib/mysql
-
-  order-db:
-    image: mysql:8.0
-    container_name: order-db
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
-      MYSQL_DATABASE: order_service
-    ports:
-      - "3311:3306" # order-service용 MySQL
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      interval: 10s
-      retries: 3
-      start_period: 30s
-      timeout: 5s
-    volumes:
-      - order-db-data:/var/lib/mysql
-    networks:
-      - app-network
-
-  product-db:
-    image: mysql:8.0
-    container_name: product-db
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # MySQL root 비밀번호
-      MYSQL_DATABASE: product_service
-    ports:
-      - "3312:3306" # product-service용 MySQL 포트
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      interval: 10s
-      retries: 3
-      start_period: 30s
-      timeout: 5s
-    volumes:
-      - product-db-data:/var/lib/mysql
-    networks:
-      - app-network
-
+      - madeby-db-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql # 초기화 스크립트 마운트
 
   redis:
     image: redis:7.0
@@ -181,11 +126,7 @@ services:
       - app-network
 
 volumes:
-  mysql-data:
-  user-db-data:
-  cart-db-data:
-  order-db-data:
-  product-db-data:
+  madeby-db-data:
   redis-data:
 
 networks:

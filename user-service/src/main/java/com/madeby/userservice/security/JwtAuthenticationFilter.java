@@ -1,16 +1,15 @@
 package com.madeby.userservice.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.madeby.userservice.common.ApiResponse;
+import com.madeBy.shared.common.ApiResponse;
+import com.madeBy.shared.entity.UserRoleEnum;
+import com.madeBy.shared.util.JwtUtil;
 import com.madeby.userservice.dto.LoginRequestDto;
-import com.madeby.userservice.entity.UserRoleEnum;
-import com.madeby.userservice.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -24,7 +23,6 @@ import java.time.Duration;
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final JwtUtil jwtUtil;
 
-    @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil) {

@@ -1,7 +1,7 @@
 package com.madeby.userservice.security;
 
-import com.madeby.userservice.entity.UserRoleEnum;
-import com.madeby.userservice.util.JwtUtil;
+import com.madeBy.shared.entity.UserRoleEnum;
+import com.madeBy.shared.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -26,13 +26,12 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserDetailsServiceImpl userDetailsService;
-
-    @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
     public JwtAuthorizationFilter(JwtUtil jwtUtil, UserDetailsServiceImpl userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
+        this.redisTemplate = new RedisTemplate<>();
     }
 
     @Override

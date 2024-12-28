@@ -2,9 +2,9 @@ package com.madeby.userservice.security;
 
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
+import com.madeBy.shared.util.AES256Util;
 import com.madeby.userservice.entity.User;
 import com.madeby.userservice.repository.UserRepository;
-import com.madeby.userservice.util.AES256Util;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;

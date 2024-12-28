@@ -1,13 +1,13 @@
 package com.madeby.userservice.service;
 
+import com.madeBy.shared.entity.UserRoleEnum;
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
+import com.madeBy.shared.util.AES256Util;
 import com.madeby.userservice.dto.SignupRequestDto;
 import com.madeby.userservice.dto.UserInfoDto;
 import com.madeby.userservice.entity.User;
-import com.madeby.userservice.entity.UserRoleEnum;
 import com.madeby.userservice.repository.UserRepository;
-import com.madeby.userservice.util.AES256Util;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;

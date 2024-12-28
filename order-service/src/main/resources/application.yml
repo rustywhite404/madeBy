@@ -5,9 +5,10 @@ spring:
   application:
     name: order-service
   datasource:
-    url: jdbc:mysql://order-db:3306/order_service
+    url: jdbc:mysql://madeby-db:3306/order_service
     username: root
     password: 1234 # MySQL root 비밀번호
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
@@ -42,4 +43,3 @@ eureka:
     metadata-map:
       instanceId: ${spring.application.name}:${random.value}
     hostname: localhost  # 환경에 따라 호스트네임 설정
-

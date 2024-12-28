@@ -21,36 +21,35 @@ public class Cart extends Timestamped{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(nullable = false)
+    private Long userId;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<CartProduct> cartProducts = new ArrayList<>();
 
     // 상품 추가
-    public boolean addProduct(ProductInfo productInfo, int quantity) {
+    public void addProduct(Long productId, int quantity) {
         for (CartProduct cartProduct : cartProducts) {
-            if (cartProduct.getProductInfo().equals(productInfo)) {
+            if (cartProduct.getProductId().equals(productId)) {
                 cartProduct.setQuantity(cartProduct.getQuantity() + quantity);
-                return true; // 상품 수량 업데이트
+                return; // 수량 업데이트
             }
         }
-        this.cartProducts.add(new CartProduct(this, productInfo, quantity));
-        return true; // 새 상품 추가
+        this.cartProducts.add(new CartProduct(this, productId, quantity));
     }
 
     // 상품 삭제
-    public void removeProduct(ProductInfo productInfo) {
-        this.cartProducts.removeIf(cartProduct -> cartProduct.getProductInfo().equals(productInfo));
+    public void removeProduct(Long productId) {
+        this.cartProducts.removeIf(cartProduct -> cartProduct.getProductId().equals(productId));
     }
 
     // 수량 업데이트
-    public void updateQuantity(ProductInfo productInfo, int quantity) {
+    public void updateQuantity(Long productId, int quantity) {
         for (CartProduct cartProduct : cartProducts) {
-            if (cartProduct.getProductInfo().equals(productInfo)) {
+            if (cartProduct.getProductId().equals(productId)) {
                 cartProduct.setQuantity(quantity);
-                return; // 업데이트 완료 후 종료
+                return;
             }
         }
         throw new MadeByException(MadeByErrorCode.CART_PRODUCT_NOT_FOUND);

@@ -15,9 +15,8 @@ public class CartProduct {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_info_id", nullable = false) // ProductInfo와 연관
-    private ProductInfo productInfo;
+    @Column(nullable = false)
+    private Long productId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id", nullable = false)
@@ -27,9 +26,9 @@ public class CartProduct {
     @Comment(value = "담은 수량")
     private int quantity;
 
-    public CartProduct(Cart cart, ProductInfo productInfo, int quantity) {
+    public CartProduct(Cart cart, Long productId, int quantity) {
         this.cart = cart;
-        this.productInfo = productInfo;
+        this.productId = productId;
         this.quantity = quantity;
     }
 }

@@ -1,8 +1,8 @@
 package com.madeby.productservice.controller;
 
+import com.madeBy.shared.common.ApiResponse;
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
-import com.madeby.productservice.common.ApiResponse;
 import com.madeby.productservice.dto.ProductsDto;
 import com.madeby.productservice.service.ProductsService;
 import lombok.RequiredArgsConstructor;

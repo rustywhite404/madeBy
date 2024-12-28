@@ -4,7 +4,6 @@ import com.madeBy.shared.common.ApiResponse;
 import com.madeby.cartservice.dto.CartProductRequestDto;
 import com.madeby.cartservice.dto.CartRequestDto;
 import com.madeby.cartservice.dto.CartResponseDto;
-import com.madeby.cartservice.security.UserDetailsImpl;
 import com.madeby.cartservice.service.CartService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,10 +19,24 @@ public class CartController {
 
     private final CartService cartService;
 
+    @GetMapping("/{userId}")
+    public CartResponseDto getCartByUserId(@PathVariable Long userId) {
+        return cartService.getCartByUserId(userId);
+    }
+
+    @GetMapping("/remove")
+    public void removeProductFromCart(@RequestParam Long userId, @RequestParam Long productInfoId) {
+        cartService.removeProductFromCart(userId, productInfoId);
+    }
+
+    @GetMapping("/clear")
+    public void clearCart(@RequestParam Long userId) {
+        cartService.clearCart(userId);
+    }
+
     // 장바구니 조회
     @GetMapping
-    public ResponseEntity<Object> getCart(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        Long userId = userDetails.getUser().getId();
+    public ResponseEntity<Object> getCart(Long userId) {
         CartResponseDto cart = cartService.getCart(userId);
         return ResponseEntity.ok(ApiResponse.success(cart));
     }
@@ -32,10 +45,9 @@ public class CartController {
     // 장바구니에 상품 추가
     @PostMapping("/add")
     public ResponseEntity<Object> addProduct(
-            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            Long userId,
             @RequestBody CartRequestDto request
     ) {
-        Long userId = userDetails.getUser().getId();
         // productInfoId와 quantity가 null인 경우 로그 확인
         if (request.getProductInfoId() == null || request.getQuantity() <= 0) {
             log.error("Invalid request: productInfoId={}, quantity={}", request.getProductInfoId(), request.getQuantity());
@@ -49,10 +61,9 @@ public class CartController {
     // 장바구니에서 상품 삭제
     @DeleteMapping("/remove")
     public ResponseEntity<Object> removeProduct(
-            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            Long userId,
             @RequestParam Long productInfoId
     ) {
-        Long userId = userDetails.getUser().getId();
         log.info("장바구니 상품 삭제 요청 - userId: {}, productInfoId: {}", userId, productInfoId);
 
         cartService.removeProduct(userId, productInfoId); // productInfoId 사용
@@ -63,10 +74,9 @@ public class CartController {
     // 장바구니 상품 수량 업데이트
     @PatchMapping("/update")
     public ResponseEntity<Object> updateProductQuantity(
-            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            Long userId,
             @RequestBody CartProductRequestDto cartProductRequest
     ) {
-        Long userId = userDetails.getUser().getId();
         log.info("장바구니 상품 수량 업데이트 요청 - userId: {}, productInfoId: {}, quantity: {}",
                 userId, cartProductRequest.getProductInfoId(), cartProductRequest.getQuantity());
 

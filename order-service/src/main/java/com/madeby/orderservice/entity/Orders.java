@@ -14,14 +14,14 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Orders extends Timestamped{
+public class Orders extends Timestamped {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(nullable = false)
+    @Comment("주문자 ID")
+    private Long userId; // User 엔티티 직접 참조 제거
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL, orphanRemoval = true)
     @Comment(value = "주문 상품 스냅샷 목록")
@@ -45,4 +45,9 @@ public class Orders extends Timestamped{
     @Comment(value = "반품 가능 여부")
     private boolean isReturnable;
 
+    // 연관된 OrderProductSnapshot 엔티티 추가 메서드
+    public void addOrderProductSnapshot(OrderProductSnapshot snapshot) {
+        snapshot.setOrders(this);
+        this.orderProductSnapshots.add(snapshot);
+    }
 }

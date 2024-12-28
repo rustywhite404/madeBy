@@ -47,7 +47,7 @@ public interface OrderRepository extends JpaRepository<Orders, Long> {
             @Param("batchSize") int batchSize
     );
     @Query("SELECT o FROM Orders o " +
-            "WHERE o.user.id = :userId " +
+            "WHERE o.userId = :userId " +
             "AND o.createdAt BETWEEN :startDate AND :endDate " +
             "AND o.id > :cursor " +
             "ORDER BY o.id ASC")

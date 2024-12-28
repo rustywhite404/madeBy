@@ -1,7 +1,7 @@
 package com.madeby.userservice.security;
 
+import com.madeBy.shared.entity.UserRoleEnum;
 import com.madeby.userservice.entity.User;
-import com.madeby.userservice.entity.UserRoleEnum;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

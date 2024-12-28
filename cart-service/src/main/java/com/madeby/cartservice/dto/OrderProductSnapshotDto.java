@@ -1,6 +1,5 @@
 package com.madeby.cartservice.dto;
 
-import com.madeby.cartservice.entity.OrderProductSnapshot;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,15 +21,4 @@ public class OrderProductSnapshotDto {
     private BigDecimal price;
     private BigDecimal totalAmount;
 
-    public static OrderProductSnapshotDto fromEntity(OrderProductSnapshot snapshot) {
-        return OrderProductSnapshotDto.builder()
-                .productName(snapshot.getProductName())
-                .productImage(snapshot.getProductImage())
-                .productDescription(snapshot.getProductDescription())
-                .category(snapshot.getCategory())
-                .quantity(snapshot.getQuantity())
-                .price(snapshot.getPrice())
-                .totalAmount(snapshot.getTotalAmount())
-                .build();
-    }
 }

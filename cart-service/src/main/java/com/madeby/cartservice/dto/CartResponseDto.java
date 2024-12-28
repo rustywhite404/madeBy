@@ -24,7 +24,7 @@ public class CartResponseDto {
     public static CartResponseDto fromEntity(Cart cart) {
         return CartResponseDto.builder()
                 .id(cart.getId())
-                .userId(cart.getUser().getId()) // 유저 ID만 추출
+                .userId(cart.getUserId()) // 유저 ID만 추출
                 .products(cart.getCartProducts().stream()
                         .map(CartProductsDto::fromEntity) // CartProductsDto로 변환
                         .collect(Collectors.toList()))

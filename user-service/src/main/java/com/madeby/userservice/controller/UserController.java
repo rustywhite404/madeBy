@@ -1,16 +1,17 @@
 package com.madeby.userservice.controller;
 
+import com.madeBy.shared.common.ApiResponse;
+import com.madeBy.shared.dto.UserResponseDto;
+import com.madeBy.shared.entity.UserRoleEnum;
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
-import com.madeby.userservice.common.ApiResponse;
+import com.madeBy.shared.util.AES256Util;
 import com.madeby.userservice.dto.SignupRequestDto;
 import com.madeby.userservice.dto.UserInfoDto;
 import com.madeby.userservice.entity.User;
-import com.madeby.userservice.entity.UserRoleEnum;
 import com.madeby.userservice.repository.UserRepository;
 import com.madeby.userservice.security.UserDetailsImpl;
 import com.madeby.userservice.service.UserService;
-import com.madeby.userservice.util.AES256Util;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,14 @@ public class UserController {
     private final UserService userService;
     private final UserRepository userRepository;
     private final RedisTemplate<String, String> redisTemplate;
+
+    @GetMapping("/{userId}")
+    public UserResponseDto getUserById(@PathVariable Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.USER_NOT_FOUND));
+
+        return new UserResponseDto(user.getId(), user.getEmail(), user.getUserName(), user.getRole());
+    }
 
 
     @PutMapping("/user/password")

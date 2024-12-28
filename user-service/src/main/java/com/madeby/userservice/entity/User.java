@@ -1,6 +1,7 @@
 package com.madeby.userservice.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.madeBy.shared.entity.UserRoleEnum;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Comment;
@@ -31,6 +32,7 @@ public class User extends Timestamped{
 
     @Column(nullable = false)
     @Comment(value = "이메일 인증여부")
+    @Builder.Default
     private boolean emailVerified = false; // 이메일 인증 여부
 
     @Column(nullable = false)
@@ -49,10 +51,6 @@ public class User extends Timestamped{
     @Comment(value = "주소")
     private String address;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private List<Orders> orders = new ArrayList<>();
-
     @Column(nullable = false)
     @Enumerated(value = EnumType.STRING)
     @Comment(value = "권한")
@@ -60,6 +58,7 @@ public class User extends Timestamped{
 
     @Column(nullable = false)
     @Comment(value = "탈퇴여부")
+    @Builder.Default
     private boolean isDeleted = false; // 회원 탈퇴 여부
 
     // 생성자 추가
