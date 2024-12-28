@@ -1,6 +1,8 @@
 rootProject.name = 'madeBy'
+include 'eureka-server'
 include 'shared'
 include 'cart-service'
 include 'product-service'
 include 'user-service'
 include 'order-service'
+include 'api-gateway'
