@@ -8,7 +8,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EnableScheduling
 @EnableDiscoveryClient
 @EnableFeignClients
 @ComponentScan(basePackages = {"com.madeBy.shared", "com.madeby.productservice"})

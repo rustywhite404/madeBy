@@ -24,7 +24,6 @@ public class ProductController {
     public  ResponseEntity<ApiResponse<List<ProductsDto>>> getProducts(
             @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "10") int size) {
-        log.info("--------------상품목록호출");
         if (size <= 0 || size > 100) {
             throw new MadeByException(MadeByErrorCode.OUT_OF_RANGE);
         }
