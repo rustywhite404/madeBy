@@ -1,5 +1,5 @@
 server:
-  port: 8082
+  port: 8083
 
 spring:
   data:
@@ -8,15 +8,16 @@ spring:
       port: 6379       # Redis 서버의 포트 번호
       password: ""     # Redis 서버의 비밀번호 (없다면 빈 문자열)
       database: 0      # 사용할 Redis 데이터베이스 인덱스
+
   datasource:
-    url: jdbc:mysql://localhost:3309/user_service
+    url: jdbc:mysql://localhost:3309/cart_service
     username: root
     password: 1234 # MySQL root 비밀번호
   jpa:
     hibernate:
       ddl-auto: update
   application:
-    name: user-service
+    name: cart-service
 
 eureka:
   client:

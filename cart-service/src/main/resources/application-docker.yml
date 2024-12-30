@@ -1,29 +1,24 @@
 server:
-  port: 8082
+  port: 8083
 
 spring:
-  data:
-    redis:
-      host: localhost
-      port: 6379       # Redis 서버의 포트 번호
-      password: ""     # Redis 서버의 비밀번호 (없다면 빈 문자열)
-      database: 0      # 사용할 Redis 데이터베이스 인덱스
+  application:
+    name: cart-service
   datasource:
-    url: jdbc:mysql://localhost:3309/user_service
+    url: jdbc:mysql://madeby-db:3306/cart_service
     username: root
     password: 1234 # MySQL root 비밀번호
   jpa:
     hibernate:
       ddl-auto: update
-  application:
-    name: user-service
+    database-platform: org.hibernate.dialect.MySQLDialect
 
 eureka:
   client:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
   instance:
     lease-renewal-interval-in-seconds: 10
     lease-expiration-duration-in-seconds: 30
