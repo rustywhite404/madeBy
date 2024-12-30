@@ -4,11 +4,8 @@ import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
 import com.madeby.cartservice.client.ProductServiceClient;
 import com.madeby.cartservice.client.UserServiceClient;
-import com.madeby.cartservice.dto.CartResponseDto;
-import com.madeby.cartservice.dto.ProductInfoDto;
-import com.madeby.cartservice.dto.ProductsDto;
+import com.madeby.cartservice.dto.*;
 import com.madeby.cartservice.entity.Cart;
-import com.madeby.cartservice.dto.UserResponseDto;
 import com.madeby.cartservice.repository.CartRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,19 +53,17 @@ public class CartService {
     }
 
     @Transactional
-    public void addProduct(Long userId, Long productId, int quantity) {
+    public void addProduct(Long userId, Long productInfoId, int quantity) {
         // 1. 장바구니 조회 또는 생성
         Cart cart = getOrCreateCart(userId);
-
+        log.info("--------장바구니 생성 완료");
         // 2. 상품 정보 검증 (Product-Service 호출)
-        ProductsDto product = productServiceClient.getProductById(productId);
-
-        if (!product.isVisible()) {
-            throw new MadeByException(MadeByErrorCode.NO_SELLING_PRODUCT); // 상품이 비활성화된 경우
-        }
+        ProductInfoDto productInfo = productServiceClient.getProductInfoById(productInfoId);
+        log.info("---------상품 정보 넘어옴:"+productInfo);
+        //상품 비활성화 여부, 남은 수량 확인
 
         // 3. 장바구니에 상품 추가
-        cart.addProduct(productId, quantity);
+        cart.addProduct(productInfo.getId(), quantity);
 
         // 4. DB 저장
         cartRepository.save(cart);

@@ -7,11 +7,16 @@ import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
 import com.madeBy.shared.util.AES256Util;
 import com.madeby.userservice.dto.SignupRequestDto;
+import com.madeby.userservice.dto.UserDetailsDto;
 import com.madeby.userservice.dto.UserInfoDto;
 import com.madeby.userservice.entity.User;
 import com.madeby.userservice.repository.UserRepository;
 import com.madeby.userservice.security.UserDetailsImpl;
 import com.madeby.userservice.service.UserService;
+import com.madeby.userservice.util.JwtUtil;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.io.DecodingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +40,31 @@ public class UserController {
     private final UserService userService;
     private final UserRepository userRepository;
     private final RedisTemplate<String, String> redisTemplate;
+    private final JwtUtil jwtUtil;
+    @GetMapping("/user/validate-token")
+    public UserDetailsDto validateToken(@RequestHeader("Authorization") String token) {
+        try {
+            Claims claims = jwtUtil.getUserInfoFromToken(token); // Claims 정보 추출
+            Long userId = Long.valueOf(claims.getSubject()); // subject에서 userId 추출
+            String emailHash = claims.get("emailHash", String.class); // emailHash 추출
+            String role = claims.get("auth").toString(); // 권한 추출
+            boolean isEnabled = claims.get("enabled", Boolean.class); // 활성화 상태 추출
+
+            log.info("JWT Claims - userId: {}, emailHash: {}, role: {}, isEnabled: {}", userId, emailHash, role, isEnabled);
+
+            // emailHash를 사용하여 UserDetailsDto 생성 및 반환
+            return new UserDetailsDto(userId, emailHash, role, isEnabled);
+        } catch (IllegalArgumentException e) {
+            log.error("JWT 처리 중 문제 발생: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage(), e);
+        } catch (ExpiredJwtException e) {
+            log.error("JWT가 만료되었습니다: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "토큰이 만료되었습니다.", e);
+        } catch (Exception e) {
+            log.error("예기치 못한 JWT 처리 오류: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "유효하지 않은 JWT 토큰입니다.", e);
+        }
+    }
 
     @GetMapping("/user/{userId}")
     public UserResponseDto getUserById(@PathVariable Long userId) {

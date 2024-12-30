@@ -4,7 +4,9 @@ import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
 import com.madeby.productservice.dto.ProductInfoDto;
 import com.madeby.productservice.dto.ProductsDto;
+import com.madeby.productservice.entity.ProductInfo;
 import com.madeby.productservice.entity.Products;
+import com.madeby.productservice.repository.ProductInfoRepository;
 import com.madeby.productservice.repository.ProductsRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +25,7 @@ import java.util.stream.Collectors;
 public class ProductsService {
 
     private final ProductsRepository productsRepository;
+    private final ProductInfoRepository productInfoRepository;
 
     @Transactional(readOnly = true)
     public Slice<ProductsDto> getProducts(Long cursor, int size) {
@@ -69,5 +73,12 @@ public class ProductsService {
                                 .build())
                         .collect(Collectors.toList()))
                 .build();
+    }
+
+    public ProductInfoDto getProductInfo(Long productInfoId) {
+        ProductInfo productInfo = productInfoRepository.findById(productInfoId).orElseThrow(
+                ()-> new MadeByException(MadeByErrorCode.NO_PRODUCT)
+        ); 
+        return ProductInfoDto.fromEntity(productInfo);
     }
 }

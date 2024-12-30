@@ -1,5 +1,6 @@
 package com.madeby.cartservice.client;
 
+import com.madeBy.shared.common.ApiResponse;
 import com.madeby.cartservice.dto.ProductInfoDto;
 import com.madeby.cartservice.dto.ProductsDto;
 import org.springframework.cloud.openfeign.FeignClient;

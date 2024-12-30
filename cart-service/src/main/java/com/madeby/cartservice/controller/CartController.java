@@ -1,9 +1,11 @@
 package com.madeby.cartservice.controller;
 
 import com.madeBy.shared.common.ApiResponse;
+import com.madeby.cartservice.client.UserServiceClient;
 import com.madeby.cartservice.dto.CartProductRequestDto;
 import com.madeby.cartservice.dto.CartRequestDto;
 import com.madeby.cartservice.dto.CartResponseDto;
+import com.madeby.cartservice.dto.UserDetailsDto;
 import com.madeby.cartservice.service.CartService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class CartController {
 
     private final CartService cartService;
+    private final UserServiceClient userServiceClient;
 
     @GetMapping("/{userId}")
     public CartResponseDto getCartByUserId(@PathVariable Long userId) {
@@ -43,10 +46,18 @@ public class CartController {
 
     // 장바구니에 상품 추가
     @PostMapping("/add")
-    public ResponseEntity<Object> addProduct(
-            Long userId,
-            @RequestBody CartRequestDto request
+    public ResponseEntity<Object> addProduct(@RequestHeader("X-User-Id") Long userId,
+                                             @RequestHeader("X-User-Role") String role,
+                                             @RequestHeader("X-User-Enabled") boolean isEnabled,
+                                             @RequestBody CartRequestDto request
     ) {
+
+        log.info("Received User ID: {}, Role: {}, Enabled: {}", userId, role, isEnabled);
+        log.info("--------이 유저의 장바구니에 상품 추가:"+userId);
+        if (!isEnabled) {
+            throw new IllegalArgumentException("비활성화된 사용자입니다.");
+        }
+
         // productInfoId와 quantity가 null인 경우 로그 확인
         if (request.getProductInfoId() == null || request.getQuantity() <= 0) {
             log.error("Invalid request: productInfoId={}, quantity={}", request.getProductInfoId(), request.getQuantity());

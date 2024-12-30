@@ -47,11 +47,16 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException {
-        String emailHash = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getEmailHash(); // 해시값 가져오기
-        UserRoleEnum role = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getRole();
+        // UserDetailsImpl에서 사용자 정보를 가져옴
+        UserDetailsImpl userDetails = (UserDetailsImpl) authResult.getPrincipal();
+
+        Long userId = userDetails.getUser().getId(); // 사용자 ID
+        String emailHash = userDetails.getUser().getEmailHash(); // 이메일 해시값
+        UserRoleEnum role = userDetails.getUser().getRole(); // 역할(Role)
+        boolean isEnabled = userDetails.isEnabled(); // 활성화 상태
 
         //accessToken 생성
-        String accessToken = jwtUtil.createToken(emailHash, role);
+        String accessToken = jwtUtil.createToken(userId, emailHash, role, isEnabled);
         log.info("생성된 Access Token: {}", accessToken);
 
         // Refresh Token 처리

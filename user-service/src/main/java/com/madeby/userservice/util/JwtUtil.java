@@ -2,6 +2,7 @@ package com.madeby.userservice.util;
 
 import com.madeBy.shared.entity.UserRoleEnum;
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,16 +45,18 @@ public class JwtUtil {
     }
 
     // Access Token 생성
-    public String createToken(String userName, UserRoleEnum role) {
+    public String createToken(Long userId, String emailHash, UserRoleEnum role, boolean isEnabled) {
         Date date = new Date();
 
         return BEARER_PREFIX +
                 Jwts.builder()
-                        .setSubject(userName) // 사용자 식별자값(ID)
-                        .claim(AUTHORIZATION_KEY, role) // 사용자 권한
+                        .setSubject(String.valueOf(userId)) // userId를 subject로 설정
+                        .claim("emailHash", emailHash) // emailHash를 클레임으로 추가
+                        .claim(AUTHORIZATION_KEY, role) // 사용자 권한 추가
+                        .claim("enabled", isEnabled) // 활성화 상태 추가
                         .setExpiration(new Date(date.getTime() + TOKEN_TIME)) // 만료 시간
                         .setIssuedAt(date) // 발급일
-                        .signWith(key, signatureAlgorithm) // 암호화 알고리즘
+                        .signWith(key, signatureAlgorithm) // 서명
                         .compact();
     }
 
@@ -114,10 +117,29 @@ public class JwtUtil {
     //만료된 AccessToken에서 정보 추출
     public Claims getUserInfoFromToken(String token) {
         try {
-            return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+            // "Bearer " 접두사 제거
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7); // "Bearer " 이후의 순수 토큰 값 추출
+            }
+
+            // JWT 파싱 및 검증
+            return Jwts.parserBuilder()
+                    .setSigningKey(key) // 서명 키 설정
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
         } catch (ExpiredJwtException e) {
-            log.info("JWT 토큰이 만료되었습니다.");
-            throw e; // 만료된 토큰에서 doFilterInternal로 예외를 던짐
+            log.warn("JWT 토큰이 만료되었습니다. 만료된 토큰으로 요청을 처리하려고 시도했습니다.");
+            throw new IllegalArgumentException("만료된 토큰입니다.", e);
+        } catch (MalformedJwtException e) {
+            log.error("JWT 구조가 올바르지 않습니다: {}", e.getMessage());
+            throw new IllegalArgumentException("유효하지 않은 토큰 형식입니다.", e);
+        } catch (DecodingException e) {
+            log.error("JWT 디코딩 중 문제가 발생했습니다: {}", e.getMessage());
+            throw new IllegalArgumentException("JWT 디코딩 중 문제가 발생했습니다.", e);
+        } catch (Exception e) {
+            log.error("JWT 파싱 중 예상치 못한 오류 발생: {}", e.getMessage());
+            throw new IllegalArgumentException("유효하지 않은 JWT 토큰입니다.", e);
         }
     }
 

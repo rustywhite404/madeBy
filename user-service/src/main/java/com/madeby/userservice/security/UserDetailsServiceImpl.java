@@ -52,12 +52,4 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return new UserDetailsImpl(user);
     }
 
-    private String maskEmail(String email) {
-        int atIndex = email.indexOf("@");
-        if (atIndex > 2) {
-            return email.substring(0, 2) + "****" + email.substring(atIndex);
-        }
-        return "****";
-    }
-
 }

@@ -3,6 +3,7 @@ package com.madeby.productservice.controller;
 import com.madeBy.shared.common.ApiResponse;
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
+import com.madeby.productservice.dto.ProductInfoDto;
 import com.madeby.productservice.dto.ProductsDto;
 import com.madeby.productservice.service.ProductsService;
 import lombok.RequiredArgsConstructor;
@@ -33,11 +34,19 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success(products));
     }
 
+    //상품 상세 한개만 가져오기(카트에 등록할 때 사용)
+    @GetMapping("/products/info/{productInfoId}")
+    public
+    ProductInfoDto getProductInfo(@PathVariable Long productInfoId) {
+        return productsService.getProductInfo(productInfoId);
+    }
+
     //상품 상세 보기
-    @GetMapping("/products/{productId}")
+    @GetMapping("/products/detail/{productId}")
     public
     ResponseEntity<ApiResponse<ProductsDto>> getProductDetail(@PathVariable Long productId) {
         ProductsDto productDetail = productsService.getProductWithInfos(productId);
         return ResponseEntity.ok(ApiResponse.success(productDetail));
     }
+
 }
