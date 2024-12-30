@@ -25,6 +25,7 @@ public class Orders extends Timestamped {
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL, orphanRemoval = true)
     @Comment(value = "주문 상품 스냅샷 목록")
+    @Builder.Default
     private List<OrderProductSnapshot> orderProductSnapshots = new ArrayList<>();
 
     @Column(nullable = false)

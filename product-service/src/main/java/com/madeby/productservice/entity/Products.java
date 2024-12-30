@@ -35,6 +35,7 @@ public class Products extends Timestamped{
 
     @Column(nullable = false)
     @Comment(value = "상품 노출여부")
+    @Builder.Default
     private boolean isVisible = true;
 
     @Column(nullable = false)
@@ -43,6 +44,7 @@ public class Products extends Timestamped{
 
     @OneToMany(mappedBy = "products", cascade = CascadeType.ALL)
     @JsonManagedReference // 자식 참조
+    @Builder.Default
     private List<ProductInfo> productInfos = new ArrayList<>();
 
 
