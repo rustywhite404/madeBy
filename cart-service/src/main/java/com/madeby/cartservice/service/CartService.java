@@ -56,11 +56,10 @@ public class CartService {
     public void addProduct(Long userId, Long productInfoId, int quantity) {
         // 1. 장바구니 조회 또는 생성
         Cart cart = getOrCreateCart(userId);
-        log.info("--------장바구니 생성 완료");
         // 2. 상품 정보 검증 (Product-Service 호출)
         ProductInfoDto productInfo = productServiceClient.getProductInfoById(productInfoId);
-        log.info("---------상품 정보 넘어옴:"+productInfo);
-        //상품 비활성화 여부, 남은 수량 확인
+        //TODO
+        // 상품 비활성화 여부, 품절여부 확인해서 장바구니 담기
 
         // 3. 장바구니에 상품 추가
         cart.addProduct(productInfo.getId(), quantity);

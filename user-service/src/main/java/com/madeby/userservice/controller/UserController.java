@@ -41,6 +41,33 @@ public class UserController {
     private final UserRepository userRepository;
     private final RedisTemplate<String, String> redisTemplate;
     private final JwtUtil jwtUtil;
+
+    @PostMapping("/user/refresh")
+    public ResponseEntity<String> refreshAccessToken(
+            @RequestHeader("X-Expired-Token") String expiredToken,
+            @RequestHeader("Refresh-Token") String refreshToken) {
+        log.info("[Token Refresh 요청] 받은 Refresh Token: {}", refreshToken);
+
+        // Refresh Token 검증
+        Claims refreshClaims = jwtUtil.getUserInfoFromToken(refreshToken);
+        String emailHash = refreshClaims.getSubject();
+
+        if (!jwtUtil.validateRefreshToken(refreshToken, emailHash)) {
+            log.error("[Token Refresh 요청] Refresh Token 검증 실패 - Email Hash: {}, Token: {}", emailHash, refreshToken);
+            throw new IllegalArgumentException("Invalid Refresh Token");
+        }
+
+        // 새로운 Access Token 생성
+        Claims expiredClaims = jwtUtil.getUserInfoFromToken(expiredToken);
+        Long userId = Long.valueOf(expiredClaims.getSubject());
+        String role = expiredClaims.get("auth", String.class);
+        boolean isEnabled = expiredClaims.get("enabled", Boolean.class);
+
+        String newAccessToken = jwtUtil.createToken(userId, emailHash, UserRoleEnum.valueOf(role), isEnabled);
+        return ResponseEntity.ok(newAccessToken);
+    }
+
+
     @GetMapping("/user/validate-token")
     public UserDetailsDto validateToken(@RequestHeader("Authorization") String token) {
         try {

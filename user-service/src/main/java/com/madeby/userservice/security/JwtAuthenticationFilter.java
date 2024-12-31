@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -30,91 +29,90 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+        log.info("[로그인 시도] 사용자 인증 시작");
         try {
             LoginRequestDto requestDto = new ObjectMapper().readValue(request.getInputStream(), LoginRequestDto.class);
-            return getAuthenticationManager().authenticate(
+            log.info("[로그인 시도] 요청 데이터 - 이메일: {}, 비밀번호: [HIDDEN]", requestDto.getEmail());
+
+            Authentication authentication = getAuthenticationManager().authenticate(
                     new UsernamePasswordAuthenticationToken(
                             requestDto.getEmail(),
                             requestDto.getPassword(),
                             null
                     )
             );
+            log.info("[로그인 시도] 인증 성공");
+            return authentication;
         } catch (IOException e) {
-            log.error(e.getMessage());
+            log.error("[로그인 시도] 요청 데이터 읽기 실패: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException {
-        // UserDetailsImpl에서 사용자 정보를 가져옴
         UserDetailsImpl userDetails = (UserDetailsImpl) authResult.getPrincipal();
+        Long userId = userDetails.getUser().getId();
+        String emailHash = userDetails.getUser().getEmailHash();
+        UserRoleEnum role = userDetails.getUser().getRole();
+        boolean isEnabled = userDetails.isEnabled();
 
-        Long userId = userDetails.getUser().getId(); // 사용자 ID
-        String emailHash = userDetails.getUser().getEmailHash(); // 이메일 해시값
-        UserRoleEnum role = userDetails.getUser().getRole(); // 역할(Role)
-        boolean isEnabled = userDetails.isEnabled(); // 활성화 상태
-
-        //accessToken 생성
         String accessToken = jwtUtil.createToken(userId, emailHash, role, isEnabled);
-        log.info("생성된 Access Token: {}", accessToken);
+        log.info("[로그인 성공] 생성된 Access Token: {}", accessToken);
 
-        // Refresh Token 처리
-        String refreshToken = redisTemplate.opsForValue().get("refreshToken:" + emailHash); // 기존 Refresh Token 확인
-
+        String refreshToken = redisTemplate.opsForValue().get("refreshToken:" + emailHash);
         if (refreshToken == null) {
-            // Refresh Token이 없는 경우에만 새로 생성
             refreshToken = jwtUtil.createRefreshToken(emailHash);
             redisTemplate.opsForValue().set(
                     "refreshToken:" + emailHash,
                     refreshToken,
                     Duration.ofDays(14)
             );
+            log.info("[로그인 성공] Redis에 새 Refresh Token 저장 완료");
         }
-        log.info("생성된 refresh Token: {}", refreshToken);
 
-        // 응답 헤더에 토큰 추가
         response.addHeader(JwtUtil.AUTHORIZATION_HEADER, accessToken);
-        response.addHeader("Refresh-Token", refreshToken);
+        response.addHeader("Refresh-Token", "Bearer " + refreshToken);
 
-        // 성공 메시지를 JSON 형태로 작성
         response.setContentType("application/json;charset=UTF-8");
         String successMessage = String.format("{\"message\": \"로그인에 성공하였습니다.\", \"accessToken\": \"%s\", \"refreshToken\": \"%s\"}", accessToken, refreshToken);
         response.getWriter().write(successMessage);
         response.getWriter().flush();
     }
 
+
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException {
-        // 상태 코드 초기값
+        log.info("[로그인 실패] 응답 작성 시작");
+
         int statusCode = HttpServletResponse.SC_UNAUTHORIZED;
         String errorCode = "AUTHENTICATION_FAILED";
         String errorMessage = "잘못된 로그인 정보입니다.";
 
-        // 쿠키 삭제
         Cookie cookie = new Cookie("Authorization", null);
         cookie.setMaxAge(0);
         cookie.setHttpOnly(true);
         response.addCookie(cookie);
+        log.info("[로그인 실패] 쿠키 제거 완료");
 
         errorMessage = failed.getMessage();
 
-        // 응답 객체 생성
         ApiResponse<?> errorResponse = ApiResponse.failure(errorCode, errorMessage);
+        log.info("[로그인 실패] 에러 응답 데이터: {}", errorResponse);
 
-        // JSON 변환
         ObjectMapper objectMapper = new ObjectMapper();
         String jsonResponse = objectMapper.writeValueAsString(errorResponse);
 
-        // 응답 설정
         response.setStatus(statusCode);
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(jsonResponse);
         response.getWriter().flush();
+
+        log.info("[로그인 실패] 응답 작성 완료");
     }
 
     public void configureLoginUrl() {
-        // 로그인 처리 URL 설정
+        log.info("[설정] 로그인 처리 URL 설정: /api/user/login");
         setFilterProcessesUrl("/api/user/login");
     }
 }
