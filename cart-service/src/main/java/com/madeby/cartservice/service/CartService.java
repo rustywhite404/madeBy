@@ -74,9 +74,6 @@ public class CartService {
         updateCartCache(userId, cart);
     }
 
-
-
-
     @Transactional
     public void updateProductQuantity(Long userId, Long productInfoId, int quantity) {
         // 1. 장바구니 조회 또는 생성
@@ -99,7 +96,6 @@ public class CartService {
     }
 
     private Cart createCart(Long userId) {
-        validateUser(userId);
         Cart newCart = new Cart();
         newCart.setUserId(userId);
         newCart.setCartProducts(new ArrayList<>()); // 명시적 초기화

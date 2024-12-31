@@ -5,7 +5,9 @@ import com.madeby.cartservice.client.UserServiceClient;
 import com.madeby.cartservice.dto.CartProductRequestDto;
 import com.madeby.cartservice.dto.CartRequestDto;
 import com.madeby.cartservice.dto.CartResponseDto;
+import com.madeby.cartservice.dto.UserDetailsDto;
 import com.madeby.cartservice.service.CartService;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -74,6 +76,7 @@ public class CartController {
         cartService.addProduct(userId, request.getProductInfoId(), request.getQuantity());
         return ResponseEntity.ok(ApiResponse.success("상품이 장바구니에 추가되었습니다."));
     }
+
 
     // 장바구니 상품 수량 업데이트
     @PatchMapping("/update")

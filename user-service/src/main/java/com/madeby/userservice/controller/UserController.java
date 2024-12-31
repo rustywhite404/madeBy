@@ -90,6 +90,7 @@ public class UserController {
 
     @GetMapping("/user/{userId}")
     public UserResponseDto getUserById(@PathVariable Long userId) {
+        log.info("----------[user service] : getUserById 호출:"+userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.USER_NOT_FOUND));
 
