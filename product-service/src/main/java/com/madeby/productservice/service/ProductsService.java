@@ -10,6 +10,7 @@ import com.madeby.productservice.repository.ProductInfoRepository;
 import com.madeby.productservice.repository.ProductsRepository;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductsService {
 
     private final ProductsRepository productsRepository;
@@ -80,5 +82,55 @@ public class ProductsService {
                 ()-> new MadeByException(MadeByErrorCode.NO_PRODUCT)
         ); 
         return ProductInfoDto.fromEntity(productInfo);
+    }
+
+    public ProductsDto getProduct(Long productId) {
+        // 1. Product 조회
+        Products product = productsRepository.findById(productId)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
+
+        // 2. ProductsDto로 변환하여 반환
+        return ProductsDto.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .image(product.getImage())
+                .description(product.getDescription())
+                .category(product.getCategory())
+                .isVisible(product.isVisible())
+                .build();
+    }
+
+    @Transactional
+    public boolean updateStock(Long productInfoId, int quantity) {
+        ProductInfo productInfo = productInfoRepository.findById(productInfoId)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
+
+        // 재고 업데이트 로직
+        productInfo.setStock(productInfo.getStock() + quantity);
+        if (productInfo.getStock() < 0) {
+            throw new IllegalArgumentException("재고가 부족합니다.");
+        }
+        return true;
+    }
+
+    public void decrementStock(Long productInfoId, int quantity) {
+        // productInfoId로 상품 정보 조회
+        ProductInfo productInfo = productInfoRepository.findById(productInfoId)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
+
+        log.info("[decrementStock] 재고 감소 처리 시작 - productInfoId: {}, 현재 재고: {}, 감소 수량: {}",
+                productInfoId, productInfo.getStock(), quantity);
+
+        // 재고 확인
+        if (productInfo.getStock() < quantity) {
+            throw new MadeByException(MadeByErrorCode.SOLD_OUT, "재고가 부족합니다.");
+        }
+
+        // 재고 감소
+        productInfo.setStock(productInfo.getStock() - quantity);
+        productInfoRepository.save(productInfo);
+
+        log.info("[decrementStock] 재고 감소 처리 완료 - productInfoId: {}, 남은 재고: {}",
+                productInfoId, productInfo.getStock());
     }
 }

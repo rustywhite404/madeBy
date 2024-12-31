@@ -16,6 +16,7 @@ public class ProductInfoDto {
     private int stock;
     private String size;
     private String color;
+    private Long productId;
 
     public static ProductInfoDto fromEntity(ProductInfo productInfo) {
         return ProductInfoDto.builder()
@@ -24,6 +25,7 @@ public class ProductInfoDto {
                 .stock(productInfo.getStock())
                 .size(productInfo.getSize())
                 .color(productInfo.getColor())
+                .productId(productInfo.getProducts().getId())
                 .build();
     }
 }

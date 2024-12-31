@@ -20,6 +20,25 @@ import java.util.List;
 public class ProductController {
     private final ProductsService productsService;
 
+    //재고 업데이트
+    @PostMapping("/products/{productInfoId}/update-stock")
+    public ResponseEntity<Boolean> updateStock(
+            @PathVariable Long productInfoId,
+            @RequestParam int quantity
+    ) {
+        boolean success = productsService.updateStock(productInfoId, quantity);
+        return ResponseEntity.ok(success);
+    }
+
+    @PostMapping("/products/{productInfoId}/decrement-stock")
+    public ResponseEntity<Void> decrementStock(
+            @PathVariable Long productInfoId,
+            @RequestParam int quantity) {
+        log.info("[decrementStock] 요청 수신 - productInfoId: {}, quantity: {}", productInfoId, quantity);
+        productsService.decrementStock(productInfoId, quantity);
+        return ResponseEntity.ok().build();
+    }
+
     //상품 목록 보기
     @GetMapping("/products")
     public  ResponseEntity<ApiResponse<List<ProductsDto>>> getProducts(
@@ -32,6 +51,13 @@ public class ProductController {
         List<ProductsDto> products = productsService.getProducts(cursor, size).getContent();
 
         return ResponseEntity.ok(ApiResponse.success(products));
+    }
+
+    // 상품 대분류 정보 가져오기
+    @GetMapping("/products/{productId}")
+    public ResponseEntity<ProductsDto> getProduct(@PathVariable Long productId) {
+        ProductsDto product = productsService.getProduct(productId);
+        return ResponseEntity.ok(product);
     }
 
     //상품 상세 한개만 가져오기(카트에 등록할 때 사용)

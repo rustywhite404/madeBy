@@ -37,6 +37,7 @@ public enum MadeByErrorCode {
     NOT_YOUR_ORDER("다른 사용자의 주문은 취소하실 수 없습니다."),
     CANNOT_RETURN("배송 완료 상태인 상품만 반품 요청이 가능합니다."),
     RETURN_NOT_ALLOWED("해당 주문은 반품이 불가능합니다. 상세 사유는 고객센터에 문의하세요."),
+    STOCK_UPDATE_FAILED("재고 업데이트에 실패했습니다."),
     
 
     DECRYPTION_ERROR("복호화에 실패했습니다."),
@@ -46,6 +47,7 @@ public enum MadeByErrorCode {
     INVALID_REQUEST("잘못된 요청입니다"),
     REDIS_ROCK_ERROR("레디스 락 처리 중 문제가 발생했습니다."),
     RESOURCE_LOCK_FAILURE("리소스 잠금에 실패했습니다.");
+
 
     private final String message;
 

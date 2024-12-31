@@ -3,12 +3,12 @@ package com.madeby.orderservice.service;
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
 import com.madeby.orderservice.client.CartServiceClient;
-import com.madeby.orderservice.dto.CartResponseDto;
-import com.madeby.orderservice.dto.OrderRequestDto;
-import com.madeby.orderservice.dto.OrderResponseDto;
+import com.madeby.orderservice.client.ProductServiceClient;
+import com.madeby.orderservice.dto.*;
 import com.madeby.orderservice.entity.*;
 import com.madeby.orderservice.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,14 +21,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class OrderService {
 
-    private final ProductInfoRepository productInfoRepository;
     private final OrderRepository orderRepository;
     private final OrderProductSnapshotRepository snapshotRepository;
     private final CartServiceClient cartServiceClient;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final ProductServiceClient productServiceClient;
 
     @Transactional
     public void requestReturn(Long orderId, Long userId) {
@@ -75,9 +76,10 @@ public class OrderService {
         // 4. 주문 상품 스냅샷을 통해 재고 복구
         List<OrderProductSnapshot> snapshots = order.getOrderProductSnapshots();
         for (OrderProductSnapshot snapshot : snapshots) {
-            ProductInfo productInfo = productInfoRepository.findById(snapshot.getProductId())
-                    .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
-
+            ProductInfoDto productInfo = productServiceClient.getProductInfo(snapshot.getProductInfoId());
+            if (productInfo == null) {
+                throw new MadeByException(MadeByErrorCode.NO_PRODUCT);
+            }
             // 재고 복구
             productInfo.setStock(productInfo.getStock() + snapshot.getQuantity());
         }
@@ -113,40 +115,49 @@ public class OrderService {
             int quantity = orderRequest.getQuantity();
 
             // 4-2. 상품 정보 확인
-            ProductInfo productInfo = productInfoRepository.findById(productInfoId)
-                    .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
-            Products product = productInfo.getProducts();
+            ProductInfoDto productInfoDto = productServiceClient.getProductInfo(productInfoId);
+            if (productInfoDto == null) {
+                throw new MadeByException(MadeByErrorCode.NO_PRODUCT, "상품 정보를 가져올 수 없습니다: " + productInfoId);
+            }
 
-            if (!product.isVisible()) {
+            ProductsDto productsDto = productServiceClient.getProduct(productInfoDto.getId());
+            if (productsDto == null || !productsDto.isVisible()) {
+                throw new MadeByException(MadeByErrorCode.NO_SELLING_PRODUCT, "해당 상품은 판매 중이 아닙니다: " + productInfoDto.getId());
+            }
+
+            if (!productsDto.isVisible()) {
                 throw new MadeByException(MadeByErrorCode.NO_SELLING_PRODUCT);
             }
 
             // 5. 품절 및 재고 확인
-            if (productInfo.getStock() <= 0) {
+            if (productInfoDto.getStock() <= 0) {
                 throw new MadeByException(MadeByErrorCode.SOLD_OUT);
             }
 
-            if (productInfo.getStock() < quantity) {
+            if (productInfoDto.getStock() < quantity) {
                 throw new MadeByException(MadeByErrorCode.DECREMENT_STOCK_FAILURE);
             }
 
             // 6. 재고 감소 (동시성 처리)
-            int stockUpdated = productInfoRepository.decrementStock(productInfoId, quantity);
-            if (stockUpdated <= 0) {
-                throw new MadeByException(MadeByErrorCode.DECREMENT_STOCK_FAILURE);
+            try {
+                productServiceClient.decrementStock(productInfoId, quantity);
+            } catch (Exception e) {
+                throw new MadeByException(MadeByErrorCode.DECREMENT_STOCK_FAILURE, "재고 감소 처리 중 오류가 발생했습니다: " + productInfoId);
             }
 
             // 7. 주문 상품 스냅샷 생성
             OrderProductSnapshot snapshot = OrderProductSnapshot.builder()
-                    .productId(product.getId())
-                    .productName(product.getName())
-                    .productImage(product.getImage())
-                    .productDescription(product.getDescription())
-                    .category(product.getCategory())
-                    .quantity(quantity)
-                    .price(productInfo.getPrice())
-                    .totalAmount(productInfo.getPrice().multiply(BigDecimal.valueOf(quantity)))
+                    .orders(order)
+                    .productInfoId(productInfoDto.getId())
+                    .productsName(productsDto.getName()) // ProductsDto에서 상품명 가져오기
+                    .stock(productInfoDto.getStock()) // ProductInfoDto에서 재고 가져오기
+                    .size(productInfoDto.getSize()) // ProductsDto에서 사이즈 가져오기
+                    .color(productInfoDto.getColor()) // ProductsDto에서 색상 가져오기
+                    .quantity(quantity) // 요청된 수량
+                    .price(productInfoDto.getPrice()) // ProductInfoDto에서 가격 가져오기
+                    .totalAmount(productInfoDto.getPrice().multiply(BigDecimal.valueOf(quantity))) // 총 금액 계산
                     .build();
+
 
             snapshots.add(snapshot);
 
@@ -181,26 +192,27 @@ public class OrderService {
     // 주문 생성(단일 상품 주문)
     @Transactional
     public Long placeOrder(Long userId, Long productInfoId, int quantity) {
-        // 1. 유저 검증 로직 제거 (API Gateway가 이미 검증함)
+        // 1. 상품 정보 가져오기 (Feign Client 사용)
+        ProductInfoDto productInfoDto = productServiceClient.getProductInfo(productInfoId);
+        if (productInfoDto == null) {
+            throw new MadeByException(MadeByErrorCode.NO_PRODUCT);
+        }
 
-        // 2. 상품 및 옵션 확인
-        ProductInfo productInfo = productInfoRepository.findById(productInfoId)
-                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
-
-        Products product = productInfo.getProducts();
+        ProductsDto product = productServiceClient.getProduct(productInfoDto.getProductId());
         if (!product.isVisible()) {
             throw new MadeByException(MadeByErrorCode.NO_SELLING_PRODUCT);
         }
 
         // 3. 재고 확인
-        if (productInfo.getStock() < quantity) {
+        if (productInfoDto.getStock() < quantity) {
             throw new MadeByException(MadeByErrorCode.SOLD_OUT);
         }
 
-        // 4. 재고 감소 (동시성 처리)
-        int stockUpdated = productInfoRepository.decrementStock(productInfoId, quantity);
-        if (stockUpdated<=0) {
-            throw new MadeByException(MadeByErrorCode.DECREMENT_STOCK_FAILURE);
+        // 4. 재고 감소 (Feign Client 사용)
+        try {
+            productServiceClient.decrementStock(productInfoId, quantity);
+        } catch (Exception e) {
+            throw new MadeByException(MadeByErrorCode.DECREMENT_STOCK_FAILURE, "재고 감소 처리 중 오류가 발생했습니다.");
         }
 
         // 5. 주문 생성 및 저장
@@ -214,13 +226,14 @@ public class OrderService {
         // 6. 주문 상품 스냅샷 생성
         OrderProductSnapshot snapshot = OrderProductSnapshot.builder()
                 .orders(order)
-                .productId(product.getId())
-                .productName(product.getName())
-                .productImage(product.getImage())
-                .productDescription(product.getDescription())
-                .category(product.getCategory())
-                .quantity(quantity)
-                .price(BigDecimal.valueOf(productInfo.getPrice().longValue()))
+                .productInfoId(productInfoDto.getId())
+                .productsName(product.getName()) // ProductsDto에서 상품명 가져오기
+                .stock(productInfoDto.getStock()) // ProductInfoDto에서 재고 가져오기
+                .size(productInfoDto.getSize()) // ProductsDto에서 사이즈 가져오기
+                .color(productInfoDto.getColor()) // ProductsDto에서 색상 가져오기
+                .quantity(quantity) // 요청된 수량
+                .price(productInfoDto.getPrice()) // ProductInfoDto에서 가격 가져오기
+                .totalAmount(productInfoDto.getPrice().multiply(BigDecimal.valueOf(quantity))) // 총 금액 계산
                 .build();
         snapshotRepository.save(snapshot);
 

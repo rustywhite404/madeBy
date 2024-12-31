@@ -1,34 +1,4 @@
-server:
-  port: 8084
-
 spring:
-  application:
-    name: order-service
-  datasource:
-    url: jdbc:mysql://madeby-db:3306/order_service
-    username: root
-    password: 1234 # MySQL root 비밀번호
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-      hibernate.dialect: org.hibernate.dialect.MySQL8Dialect  # MySQL 8에 적합한 Dialect
-
-eureka:
-  client:
-    register-with-eureka: true
-    fetch-registry: true
-    service-url:
-      defaultZone: http://eureka-server:8761/eureka/
-  instance:
-    lease-renewal-interval-in-seconds: 30
-    lease-expiration-duration-in-seconds: 90
-    prefer-ip-address: true
-    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
-    non-secure-port-enabled: true
-    metadata-map:
-      instanceId: ${spring.application.name}:${random.value}
-
-logging:
-  level:
-    org.springframework.web: DEBUG
+  profiles:
+    active:
+      - dev

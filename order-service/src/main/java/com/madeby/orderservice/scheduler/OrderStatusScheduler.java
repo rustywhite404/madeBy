@@ -2,12 +2,12 @@ package com.madeby.orderservice.scheduler;
 
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
+import com.madeby.orderservice.client.ProductServiceClient;
+import com.madeby.orderservice.dto.ProductInfoDto;
 import com.madeby.orderservice.entity.OrderProductSnapshot;
 import com.madeby.orderservice.entity.OrderStatus;
 import com.madeby.orderservice.entity.Orders;
-import com.madeby.orderservice.entity.ProductInfo;
 import com.madeby.orderservice.repository.OrderRepository;
-import com.madeby.orderservice.repository.ProductInfoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,7 +24,7 @@ import java.util.List;
 public class OrderStatusScheduler {
 
     private final OrderRepository orderRepository;
-    private final ProductInfoRepository productInfoRepository;
+    private final ProductServiceClient productServiceClient;
 
     //@Scheduled(cron = "0 0 0,12,18 * * *") // 매일 00:00, 08:00, 16:00에 실행
     @Scheduled(cron = "0 */50 * * * *") // 테스트를 위해 50분마다 갱신
@@ -167,11 +167,21 @@ public class OrderStatusScheduler {
 
             for (Orders order : orders) {
                 for (OrderProductSnapshot snapshot : order.getOrderProductSnapshots()) {
-                    ProductInfo productInfo = productInfoRepository.findById(snapshot.getProductId())
-                            .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
+                    ProductInfoDto productInfo = productServiceClient.getProductInfo(snapshot.getProductInfoId());
 
-                    productInfo.setStock(productInfo.getStock() + snapshot.getQuantity());
-                    productInfoRepository.save(productInfo);
+                    if (productInfo == null) {
+                        throw new MadeByException(MadeByErrorCode.NO_PRODUCT); // 예외 발생
+                    }
+
+                    // Feign Client를 통해 재고 업데이트 요청
+                    boolean updateSuccess = productServiceClient.updateStock(
+                            snapshot.getProductInfoId(),
+                            snapshot.getQuantity()
+                    );
+
+                    if (!updateSuccess) {
+                        throw new MadeByException(MadeByErrorCode.STOCK_UPDATE_FAILED); // 재고 업데이트 실패 시 예외 처리
+                    }
                 }
                 order.setStatus(OrderStatus.RETURNED);
             }

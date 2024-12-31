@@ -14,20 +14,22 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class OrderProductSnapshotDto {
 
-    private String productName;
-    private String productImage;
-    private String productDescription;
-    private String category;
-    private int quantity;
-    private BigDecimal price;
-    private BigDecimal totalAmount;
+    private Long productInfoId; // 원본 상품 ID
+    private String productsName; // 상품명
+    private int stock; // 재고
+    private String size; // 사이즈
+    private String color; // 색상
+    private int quantity; // 수량
+    private BigDecimal price; // 가격
+    private BigDecimal totalAmount; // 총액
 
     public static OrderProductSnapshotDto fromEntity(OrderProductSnapshot snapshot) {
         return OrderProductSnapshotDto.builder()
-                .productName(snapshot.getProductName())
-                .productImage(snapshot.getProductImage())
-                .productDescription(snapshot.getProductDescription())
-                .category(snapshot.getCategory())
+                .productInfoId(snapshot.getProductInfoId())
+                .productsName(snapshot.getProductsName())
+                .stock(snapshot.getStock())
+                .size(snapshot.getSize())
+                .color(snapshot.getColor())
                 .quantity(snapshot.getQuantity())
                 .price(snapshot.getPrice())
                 .totalAmount(snapshot.getTotalAmount())
