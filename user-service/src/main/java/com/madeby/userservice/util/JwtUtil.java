@@ -31,7 +31,7 @@ public class JwtUtil {
     public static final String BEARER_PREFIX = "Bearer ";
 
     // 토큰 만료시간
-    private final long TOKEN_TIME = 60 * 60 * 1000L; // 60분
+    private final long TOKEN_TIME = 1 * 60 * 1000L; // 1분
 
     private Key key;
     private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
@@ -64,7 +64,7 @@ public class JwtUtil {
                     .setIssuedAt(now)
                     .signWith(key, signatureAlgorithm)
                     .compact();
-            log.info("[JWT 생성] 성공 - 생성된 토큰: Bearer {}", token);
+            log.info("[JWT 생성] 성공 - 생성된 Access 토큰: ", token);
             return BEARER_PREFIX + token;
         } catch (Exception e) {
             log.error("[JWT 생성] 오류 - 사용자 ID: {}, 이메일 해시: {}, 권한: {}, 활성화 여부: {}", userId, emailHash, role, isEnabled, e);
@@ -89,30 +89,26 @@ public class JwtUtil {
                     .signWith(key, signatureAlgorithm)
                     .compact();
             log.info("[Refresh Token 생성] 성공 - 생성된 Refresh 토큰: {}", refreshToken);
-            return BEARER_PREFIX + refreshToken;
+            return refreshToken;
         } catch (Exception e) {
             log.error("[Refresh Token 생성] 오류 - 이메일 해시: {}", emailHash, e);
             throw new RuntimeException("Refresh 토큰 생성 중 오류가 발생했습니다.", e);
         }
     }
 
+    // Refresh Token 검증
     public boolean validateRefreshToken(String refreshToken, String emailHash) {
         log.info("[Refresh Token 검증] 시작 - 이메일 해시: {}", emailHash);
         String storedToken = redisTemplate.opsForValue().get("refreshToken:" + emailHash);
-
-        if (storedToken == null) {
-            log.error("[Refresh Token 검증] Redis에 저장된 토큰이 없습니다. 키: {}", "refreshToken:" + emailHash);
+        log.info("--------레디스에 저장된 토큰:"+storedToken);
+        log.info("--------비교할 refreshToken:"+refreshToken);
+        if (storedToken == null || !storedToken.equals(refreshToken)) {
+            log.error("[Refresh Token 검증] 실패 - Redis에 저장된 토큰과 요청 토큰이 일치하지 않음");
             return false;
         }
 
-        log.info("[Refresh Token 검증] Redis에서 가져온 토큰: {}", storedToken);
-        log.info("[Refresh Token 검증] 요청에서 전달된 토큰: {}", refreshToken);
-
-        boolean isValid = storedToken.equals(refreshToken);
-        if (!isValid) {
-            log.error("[Refresh Token 검증] 실패 - Redis 토큰과 요청 토큰이 불일치합니다.");
-        }
-        return isValid;
+        log.info("[Refresh Token 검증] 성공");
+        return true;
     }
 
     public String getJwtFromHeader(HttpServletRequest request) {
@@ -130,60 +126,52 @@ public class JwtUtil {
         return null;
     }
 
-    private String removeBearerPrefix(String token) {
+    // Bearer prefix 제거
+    public String removeBearerPrefix(String token) {
+        if (token == null) {
+            throw new IllegalArgumentException("Authorization 헤더가 null입니다.");
+        }
         if (StringUtils.hasText(token) && token.startsWith(BEARER_PREFIX)) {
             return token.substring(BEARER_PREFIX.length());
         }
-        return token;
-    }
-
-    public Long extractUserId(String token) {
-        log.info("[사용자 ID 추출] 토큰에서 사용자 ID 추출 시작");
-        Claims claims = getUserInfoFromToken(token);
-        Long userId = Long.valueOf(claims.getSubject());
-        log.info("[사용자 ID 추출] 추출된 사용자 ID: {}", userId);
-        return userId;
+        throw new IllegalArgumentException("Invalid Authorization header format");
     }
 
     public boolean validateToken(String token) {
-        log.info("[JWT 검증] 토큰 검증 시작");
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            log.info("[JWT 검증] 토큰 유효성 검증 성공");
             return true;
-        } catch (SecurityException | MalformedJwtException | SignatureException e) {
-            log.error("[JWT 검증] Invalid JWT signature, 유효하지 않은 JWT 서명 입니다.", e);
         } catch (ExpiredJwtException e) {
-            log.error("[JWT 검증] Expired JWT token, 만료된 JWT token 입니다.", e);
-        } catch (UnsupportedJwtException e) {
-            log.error("[JWT 검증] Unsupported JWT token, 지원되지 않는 JWT 토큰 입니다.", e);
-        } catch (IllegalArgumentException e) {
-            log.error("[JWT 검증] JWT claims is empty, 잘못된 JWT 토큰 입니다.", e);
+            log.error("[JWT 검증] Expired JWT token, 만료된 JWT token 입니다.");
+            return false;
+        } catch (Exception e) {
+            log.error("[JWT 검증] Invalid JWT: {}", e.getMessage());
+            return false;
         }
-        log.warn("[JWT 검증] 토큰이 유효하지 않습니다.");
-        return false;
     }
 
-    public Claims getUserInfoFromToken(String token) {
+    public Claims getUserInfoFromToken(String token, boolean allowExpired) {
         log.info("[JWT 정보 추출] 토큰에서 정보 추출 시작");
-        token = removeBearerPrefix(token);
 
         try {
-            Claims claims = Jwts.parserBuilder()
+            return Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
-            log.info("[JWT 정보 추출] 추출된 Claims: {}", claims);
-            return claims;
         } catch (ExpiredJwtException e) {
-            log.warn("[JWT 정보 추출] JWT 토큰이 만료되었습니다.", e);
-            return e.getClaims();
+            if (allowExpired) {
+                log.warn("[JWT 정보 추출] 만료된 토큰 허용 - Claims 반환");
+                return e.getClaims();
+            }
+            log.error("[JWT 정보 추출] 만료된 JWT 토큰");
+            throw e;
         } catch (Exception e) {
             log.error("[JWT 정보 추출] JWT 파싱 중 오류 발생.", e);
             throw new IllegalArgumentException("유효하지 않은 JWT 토큰입니다.", e);
         }
     }
+
 
 
 

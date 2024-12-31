@@ -20,6 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Date;
 
 @Slf4j(topic = "JWT 검증 및 인가")
 @RequiredArgsConstructor
@@ -36,46 +37,41 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         String tokenValue = jwtUtil.getJwtFromHeader(req);
         log.info("[토큰 검증] Authorization 헤더에서 추출된 토큰: {}", tokenValue);
 
+        String requestURI = req.getRequestURI(); // 요청 URI 확인
+
         if (StringUtils.hasText(tokenValue)) {
             try {
+                // /api/user/refresh 요청에서는 만료된 Claims 허용
+                boolean allowExpired = "/api/user/refresh".equals(requestURI);
+                Claims info = jwtUtil.getUserInfoFromToken(tokenValue, allowExpired);
 
-                log.info("[Access Token 검증] 시작");
-                Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
-
-                log.info("[Access Token 검증] 성공 - 사용자 ID: {}", info.get("userId", Long.class));
-                setAuthentication(info.get("userId", Long.class));
-            } catch (ExpiredJwtException e) {
-                log.warn("[Access Token 만료] 만료된 토큰 - 사용자: {}", e.getClaims().getSubject());
-                String emailHash = e.getClaims().getSubject();
-
-                log.info("[Refresh Token 확인] Redis에서 Refresh Token 조회");
-                String refreshToken = redisTemplate.opsForValue().get("refreshToken:" + emailHash);
-                log.info("[Refresh Token 확인] 조회된 Refresh Token: {}", refreshToken);
-
-                if (refreshToken != null && jwtUtil.validateToken(refreshToken)) {
-                    log.info("[Refresh Token 유효] 새로운 Access Token 발급 시작");
-                    Claims refreshTokenInfo = jwtUtil.getUserInfoFromToken(refreshToken);
-                    Long userId = refreshTokenInfo.get("userId", Long.class);
-                    UserRoleEnum role = UserRoleEnum.valueOf(refreshTokenInfo.get("role", String.class));
-                    boolean isEnabled = refreshTokenInfo.get("isEnabled", Boolean.class);
-
-                    String newAccessToken = jwtUtil.createToken(userId, emailHash, role, isEnabled);
-                    log.info("[새 Access Token 발급] 발급된 토큰: {}", newAccessToken);
-
-                    res.addHeader("Authorization", newAccessToken);
-                    log.info("[헤더 설정] 새 Access Token 헤더에 추가 완료");
-
-                    setAuthentication(userId);
+                if (!allowExpired) {
+                    log.info("[Access Token 검증] 성공 - 사용자 ID: {}", info.get("userId", Long.class));
+                    setAuthentication(info.get("userId", Long.class));
                 } else {
-                    log.error("[Refresh Token 오류] 유효한 Refresh Token이 존재하지 않음");
+                    log.info("[만료된 Claims 처리] /api/user/refresh 요청 - Claims 저장");
+                    req.setAttribute("expiredClaims", info); // 만료된 Claims를 요청 속성에 추가
+                }
+
+            } catch (ExpiredJwtException e) {
+                // 만료된 토큰 처리
+                log.warn("[Access Token 만료] 만료된 토큰 - 사용자: {}", e.getClaims().getSubject());
+                if ("/api/user/refresh".equals(requestURI)) {
+                    log.info("[만료된 Claims 허용] /api/user/refresh 요청 - Claims 저장");
+                    req.setAttribute("expiredClaims", e.getClaims()); // 만료된 Claims를 요청 속성에 추가
+                } else {
+                    // 만료된 토큰을 사용하는 다른 요청은 차단
+                    log.error("[Access Token 오류] 만료된 토큰 - 사용자 ID: {}", e.getClaims().getSubject());
                     res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     res.setContentType("application/json;charset=UTF-8");
-                    res.getWriter().write("{\"error\": \"Refresh Token이 만료되었습니다. 다시 로그인해주세요.\"}");
+                    res.getWriter().write("{\"error\": \"Token expired\"}");
                     return;
                 }
             } catch (Exception ex) {
+                // 기타 토큰 처리 오류
                 log.error("[토큰 처리 오류] JWT 처리 중 오류 발생: {}", ex.getMessage());
                 res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                res.setContentType("application/json;charset=UTF-8");
                 res.getWriter().write("{\"error\": \"잘못된 토큰입니다.\"}");
                 return;
             }
@@ -86,6 +82,8 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         log.info("[필터 체인] 다음 필터로 진행");
         filterChain.doFilter(req, res);
     }
+
+
 
     private void setAuthentication(Long userId) {
         log.info("[인증 설정] 사용자 ID로 SecurityContextHolder 설정 시작 - ID: {}", userId);

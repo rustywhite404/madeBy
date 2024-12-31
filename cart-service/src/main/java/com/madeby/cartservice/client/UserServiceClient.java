@@ -12,6 +12,4 @@ public interface UserServiceClient {
     @GetMapping("/api/user/{userId}")
     UserResponseDto getUserById(@PathVariable("userId") Long userId);
 
-    @GetMapping("/api/user/validate-token")
-    UserDetailsDto validateToken(@RequestHeader("Authorization") String token);
 }

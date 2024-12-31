@@ -58,7 +58,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         boolean isEnabled = userDetails.isEnabled();
 
         String accessToken = jwtUtil.createToken(userId, emailHash, role, isEnabled);
-        log.info("[로그인 성공] 생성된 Access Token: {}", accessToken);
+        log.info("[로그인 성공] 완성된 Access Token: {}", accessToken);
 
         String refreshToken = redisTemplate.opsForValue().get("refreshToken:" + emailHash);
         if (refreshToken == null) {
@@ -72,7 +72,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         }
 
         response.addHeader(JwtUtil.AUTHORIZATION_HEADER, accessToken);
-        response.addHeader("Refresh-Token", "Bearer " + refreshToken);
+        response.addHeader("Refresh-Token", refreshToken);
 
         response.setContentType("application/json;charset=UTF-8");
         String successMessage = String.format("{\"message\": \"로그인에 성공하였습니다.\", \"accessToken\": \"%s\", \"refreshToken\": \"%s\"}", accessToken, refreshToken);

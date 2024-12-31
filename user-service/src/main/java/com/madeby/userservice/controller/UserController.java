@@ -17,6 +17,7 @@ import com.madeby.userservice.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.io.DecodingException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,55 +44,49 @@ public class UserController {
     private final JwtUtil jwtUtil;
 
     @PostMapping("/user/refresh")
-    public ResponseEntity<String> refreshAccessToken(
-            @RequestHeader("X-Expired-Token") String expiredToken,
-            @RequestHeader("Refresh-Token") String refreshToken) {
-        log.info("[Token Refresh 요청] 받은 Refresh Token: {}", refreshToken);
+    public ResponseEntity<Object> refreshAccessToken(
+            @RequestHeader(value = "Refresh-Token", required = true) String refreshTokenHeader,
+            HttpServletRequest request) {
+
+        //만료된 토큰에서 expiredClaims 가져옴
+        Claims expiredClaims = (Claims) request.getAttribute("expiredClaims");
+        if (expiredClaims == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Expired Token");
+        }
+
+        String emailHash = expiredClaims.get("emailHash", String.class);
+        if (emailHash == null || emailHash.isEmpty()) {
+            log.error("[Token Refresh 요청] emailHash가 Claims에 존재하지 않습니다.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid Token: emailHash not found");
+        }
+        log.info("[Token Refresh 요청] 추출된 이메일 해시: {}", emailHash);
 
         // Refresh Token 검증
-        Claims refreshClaims = jwtUtil.getUserInfoFromToken(refreshToken);
-        String emailHash = refreshClaims.getSubject();
-
-        if (!jwtUtil.validateRefreshToken(refreshToken, emailHash)) {
-            log.error("[Token Refresh 요청] Refresh Token 검증 실패 - Email Hash: {}, Token: {}", emailHash, refreshToken);
-            throw new IllegalArgumentException("Invalid Refresh Token");
+        if (!jwtUtil.validateRefreshToken(refreshTokenHeader, emailHash)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid Refresh Token");
         }
 
-        // 새로운 Access Token 생성
-        Claims expiredClaims = jwtUtil.getUserInfoFromToken(expiredToken);
-        Long userId = Long.valueOf(expiredClaims.getSubject());
-        String role = expiredClaims.get("auth", String.class);
-        boolean isEnabled = expiredClaims.get("enabled", Boolean.class);
+        // 사용자 정보 검색 및 새로운 Access Token 생성
+        UserDetailsDto userDetails = userService.getUserDetailsByEmailHash(emailHash);
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
 
-        String newAccessToken = jwtUtil.createToken(userId, emailHash, UserRoleEnum.valueOf(role), isEnabled);
-        return ResponseEntity.ok(newAccessToken);
+        String newAccessToken = jwtUtil.createToken(
+                userDetails.getUserId(),
+                emailHash,
+                UserRoleEnum.valueOf(userDetails.getRole()),
+                userDetails.isEnabled()
+        );
+
+        log.info("[Token Refresh] 새로운 Access Token 발급 완료: {}", newAccessToken);
+
+        return ResponseEntity.ok()
+                .header("Authorization", "Bearer " + newAccessToken)
+                .body(Map.of("accessToken", newAccessToken));
     }
 
 
-    @GetMapping("/user/validate-token")
-    public UserDetailsDto validateToken(@RequestHeader("Authorization") String token) {
-        try {
-            Claims claims = jwtUtil.getUserInfoFromToken(token); // Claims 정보 추출
-            Long userId = Long.valueOf(claims.getSubject()); // subject에서 userId 추출
-            String emailHash = claims.get("emailHash", String.class); // emailHash 추출
-            String role = claims.get("auth").toString(); // 권한 추출
-            boolean isEnabled = claims.get("enabled", Boolean.class); // 활성화 상태 추출
-
-            log.info("JWT Claims - userId: {}, emailHash: {}, role: {}, isEnabled: {}", userId, emailHash, role, isEnabled);
-
-            // emailHash를 사용하여 UserDetailsDto 생성 및 반환
-            return new UserDetailsDto(userId, emailHash, role, isEnabled);
-        } catch (IllegalArgumentException e) {
-            log.error("JWT 처리 중 문제 발생: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage(), e);
-        } catch (ExpiredJwtException e) {
-            log.error("JWT가 만료되었습니다: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "토큰이 만료되었습니다.", e);
-        } catch (Exception e) {
-            log.error("예기치 못한 JWT 처리 오류: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "유효하지 않은 JWT 토큰입니다.", e);
-        }
-    }
 
     @GetMapping("/user/{userId}")
     public UserResponseDto getUserById(@PathVariable Long userId) {
@@ -104,15 +99,20 @@ public class UserController {
 
     @PutMapping("/user/password")
     public ResponseEntity<?> changePassword(
-            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-EmailHash") String emailHash,
             @RequestBody Map<String, String> requestBody
     ) {
         // 요청에서 현재 비밀번호와 새 비밀번호 추출
         String currentPassword = requestBody.get("currentPassword");
         String newPassword = requestBody.get("newPassword");
 
+        if (currentPassword == null || newPassword == null) {
+            throw new IllegalArgumentException("현재 비밀번호와 새 비밀번호는 필수입니다.");
+        }
+
         // 비밀번호 변경 서비스 호출
-        userService.changePassword(userDetails.getUser(), currentPassword, newPassword);
+        userService.changePassword(userId, emailHash, currentPassword, newPassword);
 
         // 성공 응답 반환
         return ResponseEntity.ok(ApiResponse.success("비밀번호가 성공적으로 변경 되었습니다."));

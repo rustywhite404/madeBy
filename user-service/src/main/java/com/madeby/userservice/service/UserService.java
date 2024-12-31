@@ -6,6 +6,7 @@ import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
 import com.madeBy.shared.util.AES256Util;
 import com.madeby.userservice.dto.SignupRequestDto;
+import com.madeby.userservice.dto.UserDetailsDto;
 import com.madeby.userservice.dto.UserInfoDto;
 import com.madeby.userservice.entity.User;
 import com.madeby.userservice.repository.UserRepository;
@@ -160,9 +161,9 @@ public class UserService {
 
 
     @Transactional
-    public void changePassword(User user, String currentPassword, String newPassword) {
+    public void changePassword(Long userId, String emailHash, String currentPassword, String newPassword) {
         // 필요한 필드만 로드
-        User currentUser = userRepository.findByIdWithoutOrders(user.getId())
+        User currentUser = userRepository.findByIdWithoutOrders(userId)
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.USER_NOT_FOUND));
 
         // 비밀번호 변경 로직
@@ -172,12 +173,23 @@ public class UserService {
         currentUser.setPassword(passwordEncoder.encode(newPassword));
 
         // Refresh Token 삭제
-        String redisKey = "refreshToken:" + user.getEmailHash();
+        String redisKey = "refreshToken:" + emailHash;
         if (redisTemplate.hasKey(redisKey)) {
             redisTemplate.delete(redisKey);
         }
 
         // 엔티티 저장 시 orders 로딩 방지
         userRepository.saveAndFlush(currentUser); // 즉시 플러시
+    }
+
+    public UserDetailsDto getUserDetailsByEmailHash(String emailHash) {
+        User user = userRepository.findByEmailHash(emailHash)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.USER_NOT_FOUND));
+        return new UserDetailsDto(
+                user.getId(),
+                emailHash,
+                user.getRole().name(),
+                user.isEmailVerified() && !user.isDeleted()
+        );
     }
 }
