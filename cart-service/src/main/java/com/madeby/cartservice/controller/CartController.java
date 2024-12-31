@@ -5,7 +5,6 @@ import com.madeby.cartservice.client.UserServiceClient;
 import com.madeby.cartservice.dto.CartProductRequestDto;
 import com.madeby.cartservice.dto.CartRequestDto;
 import com.madeby.cartservice.dto.CartResponseDto;
-import com.madeby.cartservice.dto.UserDetailsDto;
 import com.madeby.cartservice.service.CartService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,7 +84,9 @@ public class CartController {
     // 장바구니 상품 수량 업데이트
     @PatchMapping("/update")
     public ResponseEntity<Object> updateProductQuantity(
-            Long userId,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Enabled") boolean isEnabled,
             @RequestBody CartProductRequestDto cartProductRequest
     ) {
         log.info("장바구니 상품 수량 업데이트 요청 - userId: {}, productInfoId: {}, quantity: {}",
