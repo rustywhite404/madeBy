@@ -125,8 +125,8 @@ public class OrderService {
                 throw new MadeByException(MadeByErrorCode.NO_SELLING_PRODUCT, "해당 상품은 판매 중이 아닙니다: " + productInfoDto.getId());
             }
 
-            if (!productsDto.isVisible()) {
-                throw new MadeByException(MadeByErrorCode.NO_SELLING_PRODUCT);
+            if (productInfoDto.getStock() < quantity) {
+                throw new MadeByException(MadeByErrorCode.SOLD_OUT, "재고 부족: " + productInfoId);
             }
 
             // 5. 품절 및 재고 확인

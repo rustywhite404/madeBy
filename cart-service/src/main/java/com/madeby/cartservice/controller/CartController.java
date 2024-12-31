@@ -30,8 +30,6 @@ public class CartController {
     // 장바구니에서 상품 삭제
     @DeleteMapping("/remove")
     public ResponseEntity<Object> removeProduct(@RequestHeader("X-User-Id") Long userId,
-                                                @RequestHeader("X-User-Role") String role,
-                                                @RequestHeader("X-User-Enabled") boolean isEnabled,
                                                 @RequestParam Long productInfoId
     ) {
         log.info("장바구니 상품 삭제 요청 - userId: {}, productInfoId: {}", userId, productInfoId);
@@ -40,7 +38,6 @@ public class CartController {
         CartResponseDto cart = cartService.getCart(userId); // 변경 후 장바구니 상태 조회
         return ResponseEntity.ok(ApiResponse.success(cart));
     }
-
 
     @GetMapping("/clear")
     public void clearCart(@RequestParam Long userId) {

@@ -15,4 +15,5 @@ public class ProductInfoDto {
     private int stock;
     private String size;
     private String color;
+    private Long productId;
 }
