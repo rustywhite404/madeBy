@@ -130,6 +130,13 @@ public class JwtUtil {
         return null;
     }
 
+    private String removeBearerPrefix(String token) {
+        if (StringUtils.hasText(token) && token.startsWith(BEARER_PREFIX)) {
+            return token.substring(BEARER_PREFIX.length());
+        }
+        return token;
+    }
+
     public Long extractUserId(String token) {
         log.info("[사용자 ID 추출] 토큰에서 사용자 ID 추출 시작");
         Claims claims = getUserInfoFromToken(token);
