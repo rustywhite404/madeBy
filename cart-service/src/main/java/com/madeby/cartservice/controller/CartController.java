@@ -25,10 +25,20 @@ public class CartController {
         return cartService.getCartByUserId(userId);
     }
 
-    @GetMapping("/remove")
-    public void removeProductFromCart(@RequestParam Long userId, @RequestParam Long productInfoId) {
-        cartService.removeProductFromCart(userId, productInfoId);
+    // 장바구니에서 상품 삭제
+    @DeleteMapping("/remove")
+    public ResponseEntity<Object> removeProduct(@RequestHeader("X-User-Id") Long userId,
+                                                @RequestHeader("X-User-Role") String role,
+                                                @RequestHeader("X-User-Enabled") boolean isEnabled,
+                                                @RequestParam Long productInfoId
+    ) {
+        log.info("장바구니 상품 삭제 요청 - userId: {}, productInfoId: {}", userId, productInfoId);
+
+        cartService.removeProduct(userId, productInfoId); // productInfoId 사용
+        CartResponseDto cart = cartService.getCart(userId); // 변경 후 장바구니 상태 조회
+        return ResponseEntity.ok(ApiResponse.success(cart));
     }
+
 
     @GetMapping("/clear")
     public void clearCart(@RequestParam Long userId) {
@@ -65,20 +75,6 @@ public class CartController {
         // 요청 처리
         cartService.addProduct(userId, request.getProductInfoId(), request.getQuantity());
         return ResponseEntity.ok(ApiResponse.success("상품이 장바구니에 추가되었습니다."));
-    }
-
-
-    // 장바구니에서 상품 삭제
-    @DeleteMapping("/remove")
-    public ResponseEntity<Object> removeProduct(
-            Long userId,
-            @RequestParam Long productInfoId
-    ) {
-        log.info("장바구니 상품 삭제 요청 - userId: {}, productInfoId: {}", userId, productInfoId);
-
-        cartService.removeProduct(userId, productInfoId); // productInfoId 사용
-        CartResponseDto cart = cartService.getCart(userId); // 변경 후 장바구니 상태 조회
-        return ResponseEntity.ok(ApiResponse.success(cart));
     }
 
     // 장바구니 상품 수량 업데이트

@@ -29,25 +29,29 @@ public class Cart extends Timestamped{
     private List<CartProduct> cartProducts = new ArrayList<>();
 
     // 상품 추가
-    public void addProduct(Long productId, int quantity) {
+    public void addProduct(Long productInfoId, int quantity) {
         for (CartProduct cartProduct : cartProducts) {
-            if (cartProduct.getProductId().equals(productId)) {
+            if (cartProduct.getProductInfoId().equals(productInfoId)) {
                 cartProduct.setQuantity(cartProduct.getQuantity() + quantity);
                 return; // 수량 업데이트
             }
         }
-        this.cartProducts.add(new CartProduct(this, productId, quantity));
+        this.cartProducts.add(new CartProduct(this, productInfoId, quantity));
     }
 
     // 상품 삭제
-    public void removeProduct(Long productId) {
-        this.cartProducts.removeIf(cartProduct -> cartProduct.getProductId().equals(productId));
+    public void removeProduct(Long productInfoId) {
+        boolean removed = this.cartProducts.removeIf(product ->
+                product.getProductInfoId().equals(productInfoId));
+        if (!removed) {
+            throw new MadeByException(MadeByErrorCode.CART_PRODUCT_NOT_FOUND);
+        }
     }
 
     // 수량 업데이트
     public void updateQuantity(Long productId, int quantity) {
         for (CartProduct cartProduct : cartProducts) {
-            if (cartProduct.getProductId().equals(productId)) {
+            if (cartProduct.getProductInfoId().equals(productId)) {
                 cartProduct.setQuantity(quantity);
                 return;
             }

@@ -16,7 +16,7 @@ public class CartProduct {
     private Long id;
 
     @Column(nullable = false)
-    private Long productId;
+    private Long productInfoId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id", nullable = false)
@@ -26,9 +26,9 @@ public class CartProduct {
     @Comment(value = "담은 수량")
     private int quantity;
 
-    public CartProduct(Cart cart, Long productId, int quantity) {
+    public CartProduct(Cart cart, Long productInfoIdId, int quantity) {
         this.cart = cart;
-        this.productId = productId;
+        this.productInfoId = productInfoIdId;
         this.quantity = quantity;
     }
 }

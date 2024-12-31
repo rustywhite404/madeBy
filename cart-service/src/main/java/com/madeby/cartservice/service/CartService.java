@@ -74,29 +74,16 @@ public class CartService {
         updateCartCache(userId, cart);
     }
 
-    @Transactional
-    public void removeProduct(Long userId, Long productId) {
-        // 1. 장바구니 조회 또는 생성
-        Cart cart = getOrCreateCart(userId);
 
-        // 2. 장바구니에서 상품 제거
-        cart.removeProduct(productId); // ProductId 기반으로 제거
-
-        // 3. DB 저장
-        cartRepository.save(cart);
-
-        // 4. Redis 캐시 갱신
-        updateCartCache(userId, cart);
-    }
 
 
     @Transactional
-    public void updateProductQuantity(Long userId, Long productId, int quantity) {
+    public void updateProductQuantity(Long userId, Long productInfoId, int quantity) {
         // 1. 장바구니 조회 또는 생성
         Cart cart = getOrCreateCart(userId);
 
         // 2. 수량 업데이트
-        cart.updateQuantity(productId, quantity); // productId 기반으로 수량 업데이트
+        cart.updateQuantity(productInfoId, quantity); // productId 기반으로 수량 업데이트
 
         // 3. DB 저장
         cartRepository.save(cart);
@@ -164,23 +151,13 @@ public class CartService {
     }
 
     @Transactional
-    public void removeProductFromCart(Long userId, Long productId) {
-        // 1. DB에서 장바구니 조회
+    public void removeProduct(Long userId, Long productInfoId) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.CART_NOT_FOUND));
 
-        // 2. 상품 제거
-        boolean removed = cart.getCartProducts().removeIf(cartProduct ->
-                cartProduct.getProductId().equals(productId));
+        cart.removeProduct(productInfoId);
 
-        if (!removed) {
-            throw new MadeByException(MadeByErrorCode.CART_PRODUCT_NOT_FOUND);
-        }
-
-        // 3. 장바구니 저장
         cartRepository.save(cart);
-
-        // 4. Redis 캐시 갱신
         updateCartCache(userId, cart);
     }
 

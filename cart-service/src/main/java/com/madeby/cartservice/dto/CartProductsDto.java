@@ -9,13 +9,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CartProductsDto {
-    private Long productId;
+    private Long productInfoId;
     private int quantity;
 
     // Entity -> DTO 변환
     public static CartProductsDto fromEntity(CartProduct cartProduct) {
         return new CartProductsDto(
-                cartProduct.getProductId(),
+                cartProduct.getProductInfoId(),
                 cartProduct.getQuantity()
         );
     }
