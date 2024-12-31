@@ -47,14 +47,12 @@ public class CartController {
 
     // 장바구니 조회
     @GetMapping
-    public ResponseEntity<Object> getCart(Long userId) {
+    public ResponseEntity<Object> getCart(@RequestHeader("X-User-Id") Long userId) {
         CartResponseDto cart = cartService.getCart(userId);
         return ResponseEntity.ok(ApiResponse.success(cart));
     }
 
-
     // 장바구니에 상품 추가
-    // 여기
     @PostMapping("/add")
     public ResponseEntity<Object> addProduct(
             @RequestHeader("X-User-Id") Long userId,
