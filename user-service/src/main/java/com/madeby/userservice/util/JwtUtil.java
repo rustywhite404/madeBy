@@ -31,7 +31,7 @@ public class JwtUtil {
     public static final String BEARER_PREFIX = "Bearer ";
 
     // 토큰 만료시간
-    private final long TOKEN_TIME = 60 * 60 * 1000L; // 1분
+    private final long TOKEN_TIME = 1 * 60 * 1000L; // 1분
 
     private Key key;
     private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
@@ -151,8 +151,6 @@ public class JwtUtil {
     }
 
     public Claims getUserInfoFromToken(String token, boolean allowExpired) {
-        log.info("[JWT 정보 추출] 토큰에서 정보 추출 시작");
-
         try {
             return Jwts.parserBuilder()
                     .setSigningKey(key)
@@ -164,15 +162,24 @@ public class JwtUtil {
                 log.warn("[JWT 정보 추출] 만료된 토큰 허용 - Claims 반환");
                 return e.getClaims();
             }
-            log.error("[JWT 정보 추출] 만료된 JWT 토큰");
             throw e;
         } catch (Exception e) {
-            log.error("[JWT 정보 추출] JWT 파싱 중 오류 발생.", e);
             throw new IllegalArgumentException("유효하지 않은 JWT 토큰입니다.", e);
         }
     }
 
 
-
+    public String getUserInfoFromRefreshToken(String refreshToken) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(refreshToken)
+                    .getBody();
+            return claims.getSubject(); // Refresh Token의 subject는 emailHash로 설정됨
+        } catch (Exception e) {
+            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.", e);
+        }
+    }
 
 }

@@ -18,6 +18,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.io.DecodingException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,52 +47,75 @@ public class UserController {
 
     @PostMapping("/user/refresh")
     public ResponseEntity<Object> refreshAccessToken(
-            @RequestHeader(value = "Refresh-Token", required = true) String refreshTokenHeader,
-            HttpServletRequest request) {
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestHeader(value = "Refresh-Token", required = false) String refreshToken,
+            HttpServletResponse response) {
 
-        //만료된 토큰에서 expiredClaims 가져옴
-        Claims expiredClaims = (Claims) request.getAttribute("expiredClaims");
-        if (expiredClaims == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Expired Token");
+        // Access Token 검증
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            log.error("[Token Refresh 실패] 'Authorization' 헤더가 누락되었습니다.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "error", "Missing Access Token",
+                    "message", "Access token must be provided."
+            ));
         }
-
-        String emailHash = expiredClaims.get("emailHash", String.class);
-        if (emailHash == null || emailHash.isEmpty()) {
-            log.error("[Token Refresh 요청] emailHash가 Claims에 존재하지 않습니다.");
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid Token: emailHash not found");
-        }
-        log.info("[Token Refresh 요청] 추출된 이메일 해시: {}", emailHash);
 
         // Refresh Token 검증
-        if (!jwtUtil.validateRefreshToken(refreshTokenHeader, emailHash)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid Refresh Token");
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            log.error("[Token Refresh 실패] 'Refresh-Token' 헤더가 누락되었습니다.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "error", "Missing Refresh-Token",
+                    "message", "Refresh token must be provided."
+            ));
         }
 
-        // 사용자 정보 검색 및 새로운 Access Token 생성
-        UserDetailsDto userDetails = userService.getUserDetailsByEmailHash(emailHash);
-        if (userDetails == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        String accessToken = authorization.substring(7);
+        Claims expiredClaims;
+        try {
+            // 만료된 Access Token의 정보 추출
+            expiredClaims = jwtUtil.getUserInfoFromToken(accessToken, true);
+            log.info("[Access Token 만료 확인] 사용자 ID: {}", expiredClaims.getSubject());
+        } catch (ExpiredJwtException e) {
+            log.warn("[Access Token 만료] 사용자 ID: {}", e.getClaims().getSubject());
+            expiredClaims = e.getClaims();
+        } catch (Exception e) {
+            log.error("[Access Token 검증 실패] 유효하지 않은 Access Token: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "error", "Invalid Access Token",
+                    "message", e.getMessage()
+            ));
         }
 
-        String newAccessToken = jwtUtil.createToken(
-                userDetails.getUserId(),
-                emailHash,
-                UserRoleEnum.valueOf(userDetails.getRole()),
-                userDetails.isEnabled()
-        );
+        // Refresh Token 검증
+        String emailHash = expiredClaims.get("emailHash", String.class);
+        if (!jwtUtil.validateRefreshToken(refreshToken, emailHash)) {
+            log.error("[Token Refresh 실패] Refresh Token 검증 실패");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "error", "Invalid Refresh Token",
+                    "message", "The provided refresh token is invalid or expired."
+            ));
+        }
 
-        log.info("[Token Refresh] 새로운 Access Token 발급 완료: {}", newAccessToken);
+        // 새 Access Token 생성
+        Long userId = Long.valueOf(expiredClaims.getSubject());
+        UserRoleEnum userRole = UserRoleEnum.valueOf(expiredClaims.get("auth", String.class));
+        boolean isEnabled = expiredClaims.get("enabled", Boolean.class);
 
-        return ResponseEntity.ok()
-                .header("Authorization", "Bearer " + newAccessToken)
-                .body(Map.of("accessToken", newAccessToken));
+        String newAccessToken = jwtUtil.createToken(userId, emailHash, userRole, isEnabled);
+
+        // 헤더에 새 Access Token 추가
+        response.addHeader("Authorization", newAccessToken);
+
+        log.info("[Token Refresh 성공] 새 Access Token 생성: {}", newAccessToken);
+        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
+
+
 
 
 
     @GetMapping("/user/{userId}")
     public UserResponseDto getUserById(@PathVariable Long userId) {
-        log.info("----------[user service] : getUserById 호출:"+userId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.USER_NOT_FOUND));
 

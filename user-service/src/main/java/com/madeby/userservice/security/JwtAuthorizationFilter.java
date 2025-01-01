@@ -33,66 +33,20 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
+        String userId = req.getHeader("X-User-Id");
+        String userRole = req.getHeader("X-User-Role");
 
-        String requestURI = req.getRequestURI(); // 요청 URI 확인
+        if (userId != null && userRole != null) {
+            log.info("[인증 설정] 사용자 ID: {}, 역할: {}", userId, userRole);
 
-        log.info("[필터 실행] 요청 URI: {}", requestURI);
-
-        // 토큰 검사를 제외할 경로
-        if (requestURI.startsWith("/api/user/signup") || requestURI.startsWith("/api/user/auth")) {
-            log.info("[토큰 검증 제외] 요청 경로: {}", requestURI);
-            filterChain.doFilter(req, res);
-            return; // 검증을 진행하지 않고 다음 필터로 넘김
+            // SecurityContext 설정
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
-        String tokenValue = jwtUtil.getJwtFromHeader(req);
-        log.info("[토큰 검증] Authorization 헤더에서 추출된 토큰: {}", tokenValue);
-
-
-        if (StringUtils.hasText(tokenValue)) {
-            try {
-                // /api/user/refresh 요청에서는 만료된 Claims 허용
-                boolean allowExpired = "/api/user/refresh".equals(requestURI);
-                Claims info = jwtUtil.getUserInfoFromToken(tokenValue, allowExpired);
-
-                if (!allowExpired) {
-                    log.info("[Access Token 검증] 성공 - 사용자 ID: {}", info.get("userId", Long.class));
-                    setAuthentication(info.get("userId", Long.class));
-                } else {
-                    log.info("[만료된 Claims 처리] /api/user/refresh 요청 - Claims 저장");
-                    req.setAttribute("expiredClaims", info); // 만료된 Claims를 요청 속성에 추가
-                }
-
-            } catch (ExpiredJwtException e) {
-                // 만료된 토큰 처리
-                log.warn("[Access Token 만료] 만료된 토큰 - 사용자: {}", e.getClaims().getSubject());
-                if ("/api/user/refresh".equals(requestURI)) {
-                    log.info("[만료된 Claims 허용] /api/user/refresh 요청 - Claims 저장");
-                    req.setAttribute("expiredClaims", e.getClaims()); // 만료된 Claims를 요청 속성에 추가
-                } else {
-                    // 만료된 토큰을 사용하는 다른 요청은 차단
-                    log.error("[Access Token 오류] 만료된 토큰 - 사용자 ID: {}", e.getClaims().getSubject());
-                    res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    res.setContentType("application/json;charset=UTF-8");
-                    res.getWriter().write("{\"error\": \"Token expired\"}");
-                    return;
-                }
-            } catch (Exception ex) {
-                // 기타 토큰 처리 오류
-                log.error("[토큰 처리 오류] JWT 처리 중 오류 발생: {}", ex.getMessage());
-                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                res.setContentType("application/json;charset=UTF-8");
-                res.getWriter().write("{\"error\": \"잘못된 토큰입니다.\"}");
-                return;
-            }
-        } else {
-            log.info("[토큰 없음] Authorization 헤더에 유효한 토큰이 없습니다.");
-        }
-
-        log.info("[필터 체인] 다음 필터로 진행");
         filterChain.doFilter(req, res);
     }
-
 
 
     private void setAuthentication(Long userId) {
