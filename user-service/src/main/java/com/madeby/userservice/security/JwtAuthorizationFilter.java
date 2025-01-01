@@ -33,18 +33,21 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
-        Enumeration<String> headerNames = req.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            String headerName = headerNames.nextElement();
-            log.info("[헤더 확인] {}: {}", headerName, req.getHeader(headerName));
+
+        String requestURI = req.getRequestURI(); // 요청 URI 확인
+
+        log.info("[필터 실행] 요청 URI: {}", requestURI);
+
+        // 토큰 검사를 제외할 경로
+        if (requestURI.startsWith("/api/user/signup") || requestURI.startsWith("/api/user/auth")) {
+            log.info("[토큰 검증 제외] 요청 경로: {}", requestURI);
+            filterChain.doFilter(req, res);
+            return; // 검증을 진행하지 않고 다음 필터로 넘김
         }
 
-
-        log.info("[필터 실행] 요청 URI: {}", req.getRequestURI());
         String tokenValue = jwtUtil.getJwtFromHeader(req);
         log.info("[토큰 검증] Authorization 헤더에서 추출된 토큰: {}", tokenValue);
 
-        String requestURI = req.getRequestURI(); // 요청 URI 확인
 
         if (StringUtils.hasText(tokenValue)) {
             try {
