@@ -40,4 +40,9 @@ public class ProductInfo {
     @Column(nullable = false)
     @Comment(value = "색상")
     private String color;
+
+    @Column(nullable = false)
+    @Comment(value = "한정 상품 여부")
+    @Builder.Default
+    private boolean isLimited = false;
 }
