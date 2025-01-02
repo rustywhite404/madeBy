@@ -30,6 +30,7 @@ public class OrderService {
     private final CartServiceClient cartServiceClient;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ProductServiceClient productServiceClient;
+    private final PaymentRepository paymentRepository;
 
     @Transactional
     public void requestReturn(Long orderId, Long userId) {
@@ -126,7 +127,7 @@ public class OrderService {
             }
 
             if (productInfoDto.getStock() < quantity) {
-                throw new MadeByException(MadeByErrorCode.SOLD_OUT, "재고 부족: " + productInfoId);
+                throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT);
             }
 
             // 5. 품절 및 재고 확인
@@ -171,13 +172,23 @@ public class OrderService {
             order.getOrderProductSnapshots().add(snapshot); // 주문 객체에 스냅샷 추가
         }
 
-        // 9. 장바구니에서 주문 완료된 상품 제거
-        for (OrderRequestDto orderRequest : orderRequestDtos) {
-            cartServiceClient.removeProductFromCart(userId, orderRequest.getProductInfoId());
+        // 9. 결제 화면 진입
+        initiatePayment(order.getId(), userId);
+
+        // 5. 결제 시도 (모의 결제)
+        PaymentStatus result = processPayment(order.getId(), userId);
+
+        // 6. 결제 결과 처리
+        if (result == PaymentStatus.COMPLETED) {
+            log.info("결제 성공: 주문 ID = {}", order.getId());
+            // 결제 성공한 경우 장바구니에서 주문 완료된 상품 제거
+            for (OrderRequestDto orderRequest : orderRequestDtos) {
+                cartServiceClient.removeProductFromCart(userId, orderRequest.getProductInfoId());
+            }
+        } else {
+            log.info("결제 실패 또는 이탈: 주문 ID = {}", order.getId());
         }
 
-        // 6. 장바구니 비우기 (Cart-Service 호출)
-        cartServiceClient.clearCart(userId);
 
         return order.getId();
     }
@@ -205,7 +216,7 @@ public class OrderService {
 
         // 3. 재고 확인
         if (productInfoDto.getStock() < quantity) {
-            throw new MadeByException(MadeByErrorCode.SOLD_OUT);
+            throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT);
         }
 
         // 4. 재고 감소 (Feign Client 사용)
@@ -236,6 +247,20 @@ public class OrderService {
                 .totalAmount(productInfoDto.getPrice().multiply(BigDecimal.valueOf(quantity))) // 총 금액 계산
                 .build();
         snapshotRepository.save(snapshot);
+
+        // 7. 결제 화면 진입 처리
+        initiatePayment(order.getId(), userId);
+
+        // 3. 결제 시도 (모의 결제)
+        PaymentStatus result = processPayment(order.getId(), userId);
+
+        // 4. 결제 결과 확인
+        if (result == PaymentStatus.COMPLETED) {
+            log.info("결제 성공: 주문 ID = {}", order.getId());
+        } else {
+            log.info("결제 실패 또는 이탈: 주문 ID = {}", order.getId());
+        }
+
 
         return order.getId();
     }
@@ -269,4 +294,61 @@ public class OrderService {
                 .map(OrderResponseDto::fromEntity)
                 .toList();
     }
+
+    @Transactional
+    public void initiatePayment(Long orderId, Long userId) {
+        // 1. 주문 조회
+        Orders order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_ORDER));
+
+        // 2. 유저 확인
+        if (!order.getUserId().equals(userId)) {
+            throw new MadeByException(MadeByErrorCode.NOT_YOUR_ORDER);
+        }
+
+        // 3. 결제 상태 확인
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseGet(() -> Payment.builder()
+                        .orderId(orderId)
+                        .status(PaymentStatus.PENDING) // '결제시도' 상태
+                        .build());
+
+        paymentRepository.save(payment);
+
+        log.info("결제 화면으로 진입: 주문 ID = {}, 결제 상태 = {}", orderId, payment.getStatus());
+    }
+
+    @Transactional
+    public PaymentStatus processPayment(Long orderId, Long userId) {
+        // 1. 결제 데이터 조회
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PAYMENT));
+
+        // 2. 고객 이탈율 시뮬레이션 (20% 확률로 결제 시도 중단)
+        if (Math.random() < 0.2) {
+            log.info("고객 이탈: 결제 시도 중단 (주문 ID: {})", orderId);
+            // 상태 변경 없이 로그만 기록하고 로직 종료
+            return PaymentStatus.CANCELED;
+        }
+
+        // 3. 결제 상태 변경 ('결제중')
+        payment.setStatus(PaymentStatus.PROCESSING);
+        paymentRepository.save(payment);
+
+        // 4. 결제 완료 시뮬레이션 (20% 확률로 결제 실패)
+        if (Math.random() < 0.2) {
+            log.info("결제 실패: 고객 사유 (주문 ID: {})", orderId);
+            // 상태는 변경하지 않고 실패 메시지만 반환
+            return PaymentStatus.FAILED;
+        }
+
+        // 5. 결제 성공
+        payment.setStatus(PaymentStatus.COMPLETED);
+        payment.setCompletedAt(LocalDateTime.now());
+        paymentRepository.save(payment);
+
+        log.info("결제 완료: 주문 ID = {}, 결제 상태 = {}", orderId, payment.getStatus());
+        return PaymentStatus.COMPLETED;
+    }
+
 }

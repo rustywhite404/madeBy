@@ -123,7 +123,7 @@ public class ProductsService {
 
         // 재고 확인
         if (productInfo.getStock() < quantity) {
-            throw new MadeByException(MadeByErrorCode.SOLD_OUT, "재고가 부족합니다.");
+            throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT);
         }
 
         // 재고 감소

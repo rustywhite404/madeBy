@@ -25,6 +25,7 @@ public enum MadeByErrorCode {
     NO_PRODUCT("상품이 존재하지 않습니다."),
     NO_SELLING_PRODUCT("현재 판매중인 상품이 아닙니다."),
     SOLD_OUT("상품이 품절되었습니다."),
+    NOT_ENOUGH_PRODUCT("상품이 충분하지 않습니다. 주문 가능 수량을 확인해주세요."),
     NO_WISHLIST("위시리스트에 등록된 상품이 없습니다."),
     DUPLICATED_WISHLIST("이미 위시리스트에 등록된 상품입니다."),
 
@@ -46,7 +47,10 @@ public enum MadeByErrorCode {
     INTERNAL_SERVER_ERROR("서버에 오류가 발생했습니다."),
     INVALID_REQUEST("잘못된 요청입니다"),
     REDIS_ROCK_ERROR("레디스 락 처리 중 문제가 발생했습니다."),
-    RESOURCE_LOCK_FAILURE("리소스 잠금에 실패했습니다.");
+    RESOURCE_LOCK_FAILURE("리소스 잠금에 실패했습니다."),
+
+
+    NO_PAYMENT("해당 주문에 대한 결제 정보를 찾을 수 없습니다.");
 
 
     private final String message;

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Payment {
+public class Payment extends Timestamped{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,9 +24,6 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     @Comment("결제 상태")
     private PaymentStatus status;
-
-    @Comment("결제 시작 시간")
-    private LocalDateTime startedAt;
 
     @Comment("결제 완료 시간")
     private LocalDateTime completedAt;

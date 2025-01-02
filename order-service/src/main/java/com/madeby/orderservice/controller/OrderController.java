@@ -6,6 +6,7 @@ import com.madeBy.shared.exception.MadeByException;
 import com.madeby.orderservice.dto.OrderRequestDto;
 import com.madeby.orderservice.dto.OrderResponseDto;
 import com.madeby.orderservice.entity.Orders;
+import com.madeby.orderservice.entity.PaymentStatus;
 import com.madeby.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,30 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+
+    // 결제 진입 API
+    @PostMapping("/{orderId}/payment")
+    public ResponseEntity<ApiResponse<String>> initiatePayment(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable Long orderId) {
+
+        // 결제 진입 서비스 호출
+        orderService.initiatePayment(orderId, userId);
+
+        return ResponseEntity.ok(ApiResponse.success("결제 화면으로 진입하였습니다."));
+    }
+
+    // 결제 API
+    @PostMapping("/{orderId}/payment/process")
+    public ResponseEntity<ApiResponse<PaymentStatus>> processPayment(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable Long orderId) {
+
+        // 결제 처리 서비스 호출
+        PaymentStatus result = orderService.processPayment(orderId, userId);
+
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
 
     @PostMapping("/{orderId}/return")
     public ResponseEntity<Object> requestReturn(
