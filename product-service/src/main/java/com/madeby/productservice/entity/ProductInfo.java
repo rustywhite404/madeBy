@@ -45,4 +45,10 @@ public class ProductInfo {
     @Comment(value = "한정 상품 여부")
     @Builder.Default
     private boolean isLimited = false;
+
+    @Column(nullable = true)
+    @Comment(value = "해당 옵션 노출 여부")
+    @Builder.Default
+    private boolean isVisible = true;
+
 }

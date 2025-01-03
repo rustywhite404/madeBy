@@ -15,6 +15,5 @@ public class ProductsDto {
     private String image;
     private String description;
     private String category;
-    private boolean isVisible;
     private List<ProductInfoDto> productInfos;
 }

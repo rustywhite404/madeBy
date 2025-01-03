@@ -5,6 +5,7 @@ import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
 import com.madeby.productservice.dto.ProductInfoDto;
 import com.madeby.productservice.dto.ProductsDto;
+import com.madeby.productservice.entity.Products;
 import com.madeby.productservice.service.ProductsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,12 @@ import java.util.List;
 @Slf4j
 public class ProductController {
     private final ProductsService productsService;
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<Products>> registerProduct(@RequestBody ProductsDto productsDto) {
+        Products registeredProduct = productsService.registerNewProduct(productsDto);
+        return ResponseEntity.ok(ApiResponse.success(registeredProduct));
+    }
 
     //재고 업데이트
     @PostMapping("/products/{productInfoId}/update-stock")

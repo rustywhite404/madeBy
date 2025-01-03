@@ -38,10 +38,6 @@ public class Products extends Timestamped{
     @Builder.Default
     private boolean isVisible = true;
 
-    @Column(nullable = false)
-    @Comment(value = "상품 등록자 ID")
-    private Long registeredBy;
-
     @OneToMany(mappedBy = "products", cascade = CascadeType.ALL)
     @JsonManagedReference // 자식 참조
     @Builder.Default

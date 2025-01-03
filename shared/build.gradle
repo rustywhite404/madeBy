@@ -37,8 +37,8 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     api 'com.mysql:mysql-connector-j' // MySQL 드라이버
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose' // Docker Compose 지원
-    testImplementation 'org.springframework.boot:spring-boot-starter-test' // 테스트 의존성
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    api 'org.springframework.boot:spring-boot-starter-test' // 테스트 의존성
+    api 'org.junit.jupiter:junit-jupiter:5.10.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // JUnit 플랫폼 런처
 
 }

@@ -17,6 +17,8 @@ public class ProductInfoDto {
     private String size;
     private String color;
     private Long productId;
+    private boolean isLimited;
+    private boolean isVisible;
 
     public static ProductInfoDto fromEntity(ProductInfo productInfo) {
         return ProductInfoDto.builder()
@@ -26,6 +28,8 @@ public class ProductInfoDto {
                 .size(productInfo.getSize())
                 .color(productInfo.getColor())
                 .productId(productInfo.getProducts().getId())
+                .isLimited(productInfo.isLimited())
+                .isVisible(productInfo.isVisible())
                 .build();
     }
 }

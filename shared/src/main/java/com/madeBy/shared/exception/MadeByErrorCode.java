@@ -47,6 +47,7 @@ public enum MadeByErrorCode {
     INTERNAL_SERVER_ERROR("서버에 오류가 발생했습니다."),
     INVALID_REQUEST("잘못된 요청입니다"),
     REDIS_ROCK_ERROR("레디스 락 처리 중 문제가 발생했습니다."),
+    CONCURRENCY_LOCK_FAILED("락 획득 중 문제가 발생했습니다."),
     RESOURCE_LOCK_FAILURE("리소스 잠금에 실패했습니다."),
 
 

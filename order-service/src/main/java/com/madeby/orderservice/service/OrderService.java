@@ -9,7 +9,8 @@ import com.madeby.orderservice.entity.*;
 import com.madeby.orderservice.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -28,9 +30,10 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderProductSnapshotRepository snapshotRepository;
     private final CartServiceClient cartServiceClient;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final StockReservationService stockReservationService;
     private final ProductServiceClient productServiceClient;
     private final PaymentRepository paymentRepository;
+
 
     @Transactional
     public void requestReturn(Long orderId, Long userId) {
@@ -203,69 +206,82 @@ public class OrderService {
     // 주문 생성(단일 상품 주문)
     @Transactional
     public Long placeOrder(Long userId, Long productInfoId, int quantity) {
+
         // 1. 상품 정보 가져오기 (Feign Client 사용)
         ProductInfoDto productInfoDto = productServiceClient.getProductInfo(productInfoId);
         if (productInfoDto == null) {
             throw new MadeByException(MadeByErrorCode.NO_PRODUCT);
         }
 
+        // 2. 판매중인 상품인지 확인
         ProductsDto product = productServiceClient.getProduct(productInfoDto.getProductId());
         if (!product.isVisible()) {
             throw new MadeByException(MadeByErrorCode.NO_SELLING_PRODUCT);
         }
 
-        // 3. 재고 확인
+        // 2-1. 재고 확인
         if (productInfoDto.getStock() < quantity) {
             throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT);
         }
 
-        // 4. 재고 감소 (Feign Client 사용)
+        // 3. 재고 확인 및 예약
+        boolean reserved = stockReservationService.reserveStock(productInfoId, quantity);
+        if (!reserved) {
+            throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT);
+        }
+        log.info("재고 예약 성공: productInfoId = {}, quantity = {}", productInfoId, quantity);
         try {
-            productServiceClient.decrementStock(productInfoId, quantity);
+
+            // 4. 주문 생성 및 저장
+            Orders order = Orders.builder()
+                    .userId(userId)
+                    .status(OrderStatus.ORDERED)
+                    .isReturnable(true) // 기본값으로 설정
+                    .build();
+            orderRepository.save(order);
+
+            // 4-1. 주문 상품 스냅샷 생성
+            OrderProductSnapshot snapshot = OrderProductSnapshot.builder()
+                    .orders(order)
+                    .productInfoId(productInfoDto.getId())
+                    .productsName(product.getName()) // ProductsDto에서 상품명 가져오기
+                    .stock(productInfoDto.getStock()) // ProductInfoDto에서 재고 가져오기
+                    .size(productInfoDto.getSize()) // ProductsDto에서 사이즈 가져오기
+                    .color(productInfoDto.getColor()) // ProductsDto에서 색상 가져오기
+                    .quantity(quantity) // 요청된 수량
+                    .price(productInfoDto.getPrice()) // ProductInfoDto에서 가격 가져오기
+                    .totalAmount(productInfoDto.getPrice().multiply(BigDecimal.valueOf(quantity))) // 총 금액 계산
+                    .build();
+            snapshotRepository.save(snapshot);
+
+            // 5. 결제 화면 진입 처리
+            initiatePayment(order.getId(), userId);
+
+            // 6. 결제 시도 (모의 결제)
+            PaymentStatus result = processPayment(order.getId(), userId);
+
+            // 7. 결제 결과 확인
+            if (result == PaymentStatus.COMPLETED) {
+                log.info("결제 성공: 주문 ID = {}", order.getId());
+                // 7-1. 실제 재고 감소 (Feign Client 사용)
+                try {
+                    productServiceClient.decrementStock(productInfoId, quantity);
+                } catch (Exception e) {
+                    throw new MadeByException(MadeByErrorCode.DECREMENT_STOCK_FAILURE, "재고 감소 처리 중 오류가 발생했습니다.");
+                }
+
+            } else {
+                log.info("결제 실패 또는 이탈: 주문 ID = {}", order.getId());
+            }
+            return order.getId();
         } catch (Exception e) {
-            throw new MadeByException(MadeByErrorCode.DECREMENT_STOCK_FAILURE, "재고 감소 처리 중 오류가 발생했습니다.");
+            stockReservationService.cancelReservation(productInfoId, quantity); //예외 발생 시 재고 예약 취소
+            throw e;
         }
-
-        // 5. 주문 생성 및 저장
-        Orders order = Orders.builder()
-                .userId(userId)
-                .status(OrderStatus.ORDERED)
-                .isReturnable(true) // 기본값으로 설정
-                .build();
-        orderRepository.save(order);
-
-        // 6. 주문 상품 스냅샷 생성
-        OrderProductSnapshot snapshot = OrderProductSnapshot.builder()
-                .orders(order)
-                .productInfoId(productInfoDto.getId())
-                .productsName(product.getName()) // ProductsDto에서 상품명 가져오기
-                .stock(productInfoDto.getStock()) // ProductInfoDto에서 재고 가져오기
-                .size(productInfoDto.getSize()) // ProductsDto에서 사이즈 가져오기
-                .color(productInfoDto.getColor()) // ProductsDto에서 색상 가져오기
-                .quantity(quantity) // 요청된 수량
-                .price(productInfoDto.getPrice()) // ProductInfoDto에서 가격 가져오기
-                .totalAmount(productInfoDto.getPrice().multiply(BigDecimal.valueOf(quantity))) // 총 금액 계산
-                .build();
-        snapshotRepository.save(snapshot);
-
-        // 7. 결제 화면 진입 처리
-        initiatePayment(order.getId(), userId);
-
-        // 3. 결제 시도 (모의 결제)
-        PaymentStatus result = processPayment(order.getId(), userId);
-
-        // 4. 결제 결과 확인
-        if (result == PaymentStatus.COMPLETED) {
-            log.info("결제 성공: 주문 ID = {}", order.getId());
-        } else {
-            log.info("결제 실패 또는 이탈: 주문 ID = {}", order.getId());
-        }
-
-
-        return order.getId();
     }
 
     // 주문 조회(조회만 수행하므로 읽기 전용 트랜잭션)
+
     @Transactional(readOnly = true)
     public List<OrderResponseDto> getOrders(Long userId, LocalDate startDate, LocalDate endDate, Long cursor, int size) {
         // 조회 날짜 범위 기본값 설정(3개월 이내)
@@ -325,22 +341,22 @@ public class OrderService {
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PAYMENT));
 
         // 2. 고객 이탈율 시뮬레이션 (20% 확률로 결제 시도 중단)
-        if (Math.random() < 0.2) {
-            log.info("고객 이탈: 결제 시도 중단 (주문 ID: {})", orderId);
+        //if (Math.random() < 0.2) {
+        //    log.info("고객 이탈: 결제 시도 중단 (주문 ID: {})", orderId);
             // 상태 변경 없이 로그만 기록하고 로직 종료
-            return PaymentStatus.CANCELED;
-        }
+        //    return PaymentStatus.CANCELED;
+        //}
 
         // 3. 결제 상태 변경 ('결제중')
         payment.setStatus(PaymentStatus.PROCESSING);
         paymentRepository.save(payment);
 
-        // 4. 결제 완료 시뮬레이션 (20% 확률로 결제 실패)
-        if (Math.random() < 0.2) {
-            log.info("결제 실패: 고객 사유 (주문 ID: {})", orderId);
-            // 상태는 변경하지 않고 실패 메시지만 반환
-            return PaymentStatus.FAILED;
-        }
+//        // 4. 결제 완료 시뮬레이션 (20% 확률로 결제 실패)
+//        if (Math.random() < 0.2) {
+//            log.info("결제 실패: 고객 사유 (주문 ID: {})", orderId);
+//            // 상태는 변경하지 않고 실패 메시지만 반환
+//            return PaymentStatus.FAILED;
+//        }
 
         // 5. 결제 성공
         payment.setStatus(PaymentStatus.COMPLETED);
