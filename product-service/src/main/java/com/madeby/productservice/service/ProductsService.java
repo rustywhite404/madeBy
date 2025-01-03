@@ -33,6 +33,25 @@ public class ProductsService {
     private final RedissonClient redissonClient;
 
     @Transactional
+    public void updateLimitedProductsVisibility() {
+        // 한정 상품들 중 isVisible=false인 상품들을 가져옴
+        List<ProductInfo> limitedProducts = productInfoRepository.findByIsLimitedTrueAndIsVisibleFalse();
+
+        if (limitedProducts.isEmpty()) {
+            // 변경 대상이 없을 경우 로그만 출력하고 종료
+            System.out.println("업데이트할 한정 상품이 없습니다.");
+            return;
+        }
+
+        for (ProductInfo product : limitedProducts) {
+            product.setVisible(true); // isVisible을 true로 변경
+        }
+
+        // 변경된 상품들 저장
+        productInfoRepository.saveAll(limitedProducts);
+    }
+
+    @Transactional
     public Products registerNewProduct(ProductsDto productsDto) {
         // 1. Products 엔티티 생성
         Products product = Products.builder()
