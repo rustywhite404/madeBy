@@ -79,8 +79,8 @@ public class OrderController {
             throw new MadeByException(MadeByErrorCode.MIN_AMOUNT);
         }
 
-        Long orderId = orderService.placeOrder(userId, requestDto.getProductInfoId(), requestDto.getQuantity());
-        return ResponseEntity.ok(ApiResponse.success("주문이 성공적으로 완료되었습니다. 주문 ID: " + orderId));
+        PaymentStatus status = orderService.placeOrder(userId, requestDto.getProductInfoId(), requestDto.getQuantity());
+        return ResponseEntity.ok(ApiResponse.success("주문이 성공적으로 완료되었습니다. 주문 상태: " + status));
     }
 
     @GetMapping

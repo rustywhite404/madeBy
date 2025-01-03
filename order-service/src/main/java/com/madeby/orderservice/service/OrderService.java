@@ -204,7 +204,7 @@ public class OrderService {
 
     // 주문 생성(단일 상품 주문)
     @Transactional
-    public Long placeOrder(Long userId, Long productInfoId, int quantity) {
+    public PaymentStatus placeOrder(Long userId, Long productInfoId, int quantity) {
 
         // 1. 상품 정보 가져오기 (Feign Client 사용)
         ProductInfoDto productInfoDto = productServiceClient.getProductInfo(productInfoId);
@@ -261,7 +261,7 @@ public class OrderService {
                 // Redis에 재고 복구
                 stockReservationService.cancelReservation(productInfoId, quantity);
             }
-            return order.getId();
+            return result;
         } catch (Exception e) {
             stockReservationService.cancelReservation(productInfoId, quantity); //예외 발생 시 재고 예약 취소
             throw e;
@@ -328,23 +328,23 @@ public class OrderService {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PAYMENT));
 
-        // 2. 고객 이탈율 시뮬레이션 (20% 확률로 결제 시도 중단)
-        //if (Math.random() < 0.2) {
-        //    log.info("고객 이탈: 결제 시도 중단 (주문 ID: {})", orderId);
-            // 상태 변경 없이 로그만 기록하고 로직 종료
-        //    return PaymentStatus.CANCELED;
-        //}
+         //2. 고객 이탈율 시뮬레이션 (20% 확률로 결제 시도 중단)
+        if (Math.random() < 0.2) {
+            log.info("고객 이탈: 결제 시도 중단 (주문 ID: {})", orderId);
+            payment.setStatus(PaymentStatus.CANCELED);
+            return PaymentStatus.CANCELED;
+        }
 
         // 3. 결제 상태 변경 ('결제중')
         payment.setStatus(PaymentStatus.PROCESSING);
         paymentRepository.save(payment);
 
-//        // 4. 결제 완료 시뮬레이션 (20% 확률로 결제 실패)
-//        if (Math.random() < 0.2) {
-//            log.info("결제 실패: 고객 사유 (주문 ID: {})", orderId);
-//            // 상태는 변경하지 않고 실패 메시지만 반환
-//            return PaymentStatus.FAILED;
-//        }
+        // 4. 결제 완료 시뮬레이션 (20% 확률로 결제 실패)
+        if (Math.random() < 0.2) {
+            log.info("결제 실패: 고객 사유 (주문 ID: {})", orderId);
+            payment.setStatus(PaymentStatus.FAILED);
+            return PaymentStatus.FAILED;
+        }
 
         // 5. 결제 성공
         payment.setStatus(PaymentStatus.COMPLETED);
