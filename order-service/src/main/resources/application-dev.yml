@@ -2,6 +2,11 @@ server:
   port: 8084
 
 spring:
+  cloud:
+    loadbalancer:
+      cache:
+        enabled: true
+        ttl: 300 # 캐시 유효 기간 (초 단위)
   data:
     redis:
       port: 6379       # Redis 서버의 포트 번호
@@ -13,6 +18,7 @@ spring:
     username: root
     password: 1234 # MySQL root 비밀번호
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
       hibernate.dialect: org.hibernate.dialect.MySQL8Dialect  # MySQL 8에 적합한 Dialect
