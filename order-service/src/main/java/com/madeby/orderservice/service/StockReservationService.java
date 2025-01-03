@@ -3,9 +3,11 @@ package com.madeby.orderservice.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
+import org.redisson.api.RScript;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -15,58 +17,63 @@ public class StockReservationService {
     private final RedissonClient redissonClient;
     private static final String STOCK_KEY = "product_stock:";
 
+
     /**
      * 재고 확인 및 예약
      */
     public boolean reserveStock(Long productInfoId, int quantity) {
-        String lockKey = "lock:product_stock:" + productInfoId;
-        RLock lock = redissonClient.getLock(lockKey);
+        return decrementStockWithLua(productInfoId, quantity);
+    }
 
-        try {
-            // 락 획득 시도
-            if (!lock.tryLock(60, 30, TimeUnit.SECONDS)) {
-                return false; // 다른 스레드가 처리 중
-            }
+    private boolean decrementStockWithLua(Long productInfoId, int quantity) {
+        // Lua 스크립트 실행 로직
+        String stockKey = "product_stock:" + productInfoId;
 
-            // Redis에서 재고 확인 및 감소
-            String redisKey = STOCK_KEY + productInfoId;
-            Integer currentStock = (Integer) redissonClient.getBucket(redisKey).get();
+        String rawValue = redissonClient.getBucket("product_stock:"+productInfoId).get().toString();
+        log.info("Redis의 원시 값: {}", rawValue);
 
-            if (currentStock == null || currentStock < quantity) {
-                return false; // 재고 부족
-            }
+        String luaScript = """
+        local stockKey = KEYS[1]
+        local quantity = tonumber(ARGV[1])
+        local currentStock = tonumber(redis.call('GET', stockKey))
+        if currentStock == nil or currentStock < quantity then
+            return 0
+        end
+        redis.call('DECRBY', stockKey, quantity)
+        return 1
+    """;
 
-            // 재고 감소
-            redissonClient.getBucket(redisKey).set(currentStock - quantity);
-            log.info("재고 감소: productInfoId = {}, 감소량 = {}, 남은 재고 = {}", productInfoId, quantity, currentStock - quantity);
-            return true;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return false;
-        } finally {
-            if (lock.isHeldByCurrentThread()) {
-                lock.unlock();
-            }
-        }
+        Object result = redissonClient.getScript().eval(
+                RScript.Mode.READ_WRITE,
+                luaScript,
+                RScript.ReturnType.INTEGER,
+                Collections.singletonList(stockKey),
+                quantity
+        );
+
+        return (Long) result == 1;
     }
 
     /**
-     * 재고 예약 취소
+     * 재고 예약 취소 (Redis 재고 복구)
      */
     public void cancelReservation(Long productInfoId, int quantity) {
         String redisKey = STOCK_KEY + productInfoId;
-        RLock lock = redissonClient.getLock("lock:product_stock:" + productInfoId);
 
-        try {
-            lock.lock();
-            Integer currentStock = (Integer) redissonClient.getBucket(redisKey).get();
-            if (currentStock != null) {
-                redissonClient.getBucket(redisKey).set(currentStock + quantity);
-            }
-        } finally {
-            if (lock.isHeldByCurrentThread()) {
-                lock.unlock();
-            }
-        }
+        String luaScript = """
+            local stockKey = KEYS[1]
+            local quantity = tonumber(ARGV[1])
+            redis.call('INCRBY', stockKey, quantity)
+            return 1
+        """;
+
+        redissonClient.getScript().eval(
+                RScript.Mode.READ_WRITE,
+                luaScript,
+                RScript.ReturnType.INTEGER,
+                Collections.singletonList(redisKey),
+                quantity
+        );
+        log.info("재고 복구 완료: productInfoId = {}, quantity = {}", productInfoId, quantity);
     }
 }

@@ -217,14 +217,8 @@ public class OrderService {
             throw new MadeByException(MadeByErrorCode.NO_SELLING_PRODUCT);
         }
 
-        // 2-1. 재고 확인
-        if (productInfoDto.getStock() < quantity) {
-            throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT);
-        }
-
         // 3. 재고 확인 및 예약
-        boolean reserved = stockReservationService.reserveStock(productInfoId, quantity);
-        if (!reserved) {
+        if (!stockReservationService.reserveStock(productInfoId, quantity)) {
             throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT);
         }
         log.info("재고 예약 성공: productInfoId = {}, quantity = {}", productInfoId, quantity);
@@ -257,18 +251,15 @@ public class OrderService {
             // 6. 결제 시도 (모의 결제)
             PaymentStatus result = processPayment(order.getId(), userId);
 
-            // 7. 결제 결과 확인
+            // 7. 결제 결과 처리
             if (result == PaymentStatus.COMPLETED) {
                 log.info("결제 성공: 주문 ID = {}", order.getId());
-                // 7-1. 실제 재고 감소 (Feign Client 사용)
-                try {
-                    productServiceClient.decrementStock(productInfoId, quantity);
-                } catch (Exception e) {
-                    throw new MadeByException(MadeByErrorCode.DECREMENT_STOCK_FAILURE, "재고 감소 처리 중 오류가 발생했습니다.");
-                }
-
+                // DB에 최종 재고 반영
+                productServiceClient.decrementStock(productInfoId, quantity);
             } else {
                 log.info("결제 실패 또는 이탈: 주문 ID = {}", order.getId());
+                // Redis에 재고 복구
+                stockReservationService.cancelReservation(productInfoId, quantity);
             }
             return order.getId();
         } catch (Exception e) {

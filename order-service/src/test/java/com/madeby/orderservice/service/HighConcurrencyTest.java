@@ -28,7 +28,7 @@ public class HighConcurrencyTest {
     @Autowired
     private RedissonClient redissonClient;
 
-    private static final Long PRODUCT_INFO_ID = 6L;
+    private static final Long PRODUCT_INFO_ID = 7L;
     private static final int INITIAL_STOCK = 30;
 
     @BeforeEach
@@ -42,7 +42,7 @@ public class HighConcurrencyTest {
 
     @Test
     void testHighConcurrencyOrders() throws InterruptedException {
-        int numberOfUsers = 40; // 동시 주문 사용자 수
+        int numberOfUsers = 100; // 동시 주문 사용자 수
         int threadPoolSize = 50; // 스레드풀 크기 설정
         ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize); // 스레드풀 크기 조정
         CountDownLatch latch = new CountDownLatch(numberOfUsers);
@@ -78,7 +78,7 @@ public class HighConcurrencyTest {
         System.out.println("실패한 주문 수: " + failedOrders);
 
         Assertions.assertEquals(INITIAL_STOCK, successfulOrders, "재고를 초과하지 않도록 성공한 주문은 재고와 일치해야 합니다.");
-        Assertions.assertEquals(40, failedOrders, "실패한 주문은 40개여야 합니다.");
+        Assertions.assertEquals(70, failedOrders, "실패한 주문은 70개여야 합니다.");
     }
 
     @AfterEach

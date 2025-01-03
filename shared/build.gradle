@@ -22,6 +22,7 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-validation' // Validation (Bean 검증)
     api 'org.springframework.boot:spring-boot-starter-data-redis' // Redis
     api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310' // Java 8 Date/Time 직렬화 지원
+    api 'org.redisson:redisson-spring-boot-starter:3.21.1'
 
     // JJWT 관련 의존성은 전이적으로 제공되어야 하므로 api로 설정
     api 'io.jsonwebtoken:jjwt-api:0.11.5'
