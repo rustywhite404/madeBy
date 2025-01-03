@@ -28,8 +28,8 @@ public class HighConcurrencyTest {
     @Autowired
     private RedissonClient redissonClient;
 
-    private static final Long PRODUCT_INFO_ID = 7L;
-    private static final int INITIAL_STOCK = 30;
+    private static final Long PRODUCT_INFO_ID = 8L;
+    private static final int INITIAL_STOCK = 20;
 
     @BeforeEach
     void setUp() {
@@ -78,7 +78,7 @@ public class HighConcurrencyTest {
         System.out.println("실패한 주문 수: " + failedOrders);
 
         Assertions.assertEquals(INITIAL_STOCK, successfulOrders, "재고를 초과하지 않도록 성공한 주문은 재고와 일치해야 합니다.");
-        Assertions.assertEquals(70, failedOrders, "실패한 주문은 70개여야 합니다.");
+        Assertions.assertEquals(80, failedOrders, "실패한 주문은 80개여야 합니다.");
     }
 
     @AfterEach

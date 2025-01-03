@@ -28,20 +28,16 @@ public class StockReservationService {
     private boolean decrementStockWithLua(Long productInfoId, int quantity) {
         // Lua 스크립트 실행 로직
         String stockKey = "product_stock:" + productInfoId;
-
-        String rawValue = redissonClient.getBucket("product_stock:"+productInfoId).get().toString();
-        log.info("Redis의 원시 값: {}", rawValue);
-
         String luaScript = """
-        local stockKey = KEYS[1]
-        local quantity = tonumber(ARGV[1])
-        local currentStock = tonumber(redis.call('GET', stockKey))
-        if currentStock == nil or currentStock < quantity then
-            return 0
-        end
-        redis.call('DECRBY', stockKey, quantity)
-        return 1
-    """;
+                    local stockKey = KEYS[1]
+                    local quantity = tonumber(ARGV[1])
+                    local currentStock = tonumber(redis.call('GET', stockKey))
+                    if currentStock == nil or currentStock < quantity then
+                        return -1
+                    end
+                    local newStock = redis.call('DECRBY', stockKey, quantity) -- 재고 감소 후 남은 재고
+                                        return newStock -- 남은 재고 반환
+                """;
 
         Object result = redissonClient.getScript().eval(
                 RScript.Mode.READ_WRITE,
@@ -51,7 +47,13 @@ public class StockReservationService {
                 quantity
         );
 
-        return (Long) result == 1;
+        if ((Long) result == -1) {
+            log.info("재고 부족: productInfoId = {}, 요청 수량 = {}", productInfoId, quantity);
+            return false;
+        }
+
+        log.info("[재고 감소 완료] 남은 재고 : {}", result);
+        return true;
     }
 
     /**

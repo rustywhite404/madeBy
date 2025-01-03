@@ -196,6 +196,6 @@ public class ProductsService {
         if (updatedRows == 0) {
             throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT, "데이터베이스 재고가 부족합니다.");
         }
-        log.info("DB 재고 감소 완료: productInfoId = {}, 감소량 = {}", productInfoId, quantity);
+        log.info("------------DB 재고 감소 완료: productInfoId = {}, 감소량 = {}", productInfoId, quantity);
     }
 }
