@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 public class OrderProductSnapshotDto {
 
     private Long productInfoId; // 원본 상품 ID
-    private String productsName; // 상품명
     private int stock; // 재고
     private String size; // 사이즈
     private String color; // 색상
@@ -26,7 +25,6 @@ public class OrderProductSnapshotDto {
     public static OrderProductSnapshotDto fromEntity(OrderProductSnapshot snapshot) {
         return OrderProductSnapshotDto.builder()
                 .productInfoId(snapshot.getProductInfoId())
-                .productsName(snapshot.getProductsName())
                 .stock(snapshot.getStock())
                 .size(snapshot.getSize())
                 .color(snapshot.getColor())

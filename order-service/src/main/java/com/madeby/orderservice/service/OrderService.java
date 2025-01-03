@@ -153,7 +153,6 @@ public class OrderService {
             OrderProductSnapshot snapshot = OrderProductSnapshot.builder()
                     .orders(order)
                     .productInfoId(productInfoDto.getId())
-                    .productsName(productsDto.getName()) // ProductsDto에서 상품명 가져오기
                     .stock(productInfoDto.getStock()) // ProductInfoDto에서 재고 가져오기
                     .size(productInfoDto.getSize()) // ProductsDto에서 사이즈 가져오기
                     .color(productInfoDto.getColor()) // ProductsDto에서 색상 가져오기
@@ -214,8 +213,7 @@ public class OrderService {
         }
 
         // 2. 판매중인 상품인지 확인
-        ProductsDto product = productServiceClient.getProduct(productInfoDto.getProductId());
-        if (!product.isVisible()) {
+        if (!productInfoDto.isVisible()) {
             throw new MadeByException(MadeByErrorCode.NO_SELLING_PRODUCT);
         }
 
@@ -244,7 +242,6 @@ public class OrderService {
             OrderProductSnapshot snapshot = OrderProductSnapshot.builder()
                     .orders(order)
                     .productInfoId(productInfoDto.getId())
-                    .productsName(product.getName()) // ProductsDto에서 상품명 가져오기
                     .stock(productInfoDto.getStock()) // ProductInfoDto에서 재고 가져오기
                     .size(productInfoDto.getSize()) // ProductsDto에서 사이즈 가져오기
                     .color(productInfoDto.getColor()) // ProductsDto에서 색상 가져오기

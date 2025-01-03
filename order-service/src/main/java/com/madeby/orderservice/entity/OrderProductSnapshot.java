@@ -29,10 +29,6 @@ public class OrderProductSnapshot {
     @Comment(value = "원본 상품 ID")
     private Long productInfoId;
 
-    @Column(nullable = false)
-    @Comment(value = "상품명")
-    private String productsName;
-
     private int stock;
     private String size;
     private String color;

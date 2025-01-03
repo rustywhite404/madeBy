@@ -18,4 +18,5 @@ public class ProductInfoDto {
     private String color;
     private Long productId;
     private boolean isLimited;
+    private boolean isVisible;
 }

@@ -188,6 +188,7 @@ public class ProductsService {
         return true;
     }
 
+    @Transactional
     public void decrementStock(Long productInfoId, int quantity) {
 
         String redisKey = "product_stock:" + productInfoId;
@@ -201,11 +202,12 @@ public class ProductsService {
         redissonClient.getBucket(redisKey).set(currentStock - quantity);
 
 
-        // 데이터베이스에도 재고 감소
-        ProductInfo productInfo = productInfoRepository.findById(productInfoId)
-                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
-        productInfo.setStock(currentStock - quantity);
-        productInfoRepository.save(productInfo);
+        // 데이터베이스에서도 재고 감소 - 직접 쿼리 사용
+        int updatedRows = productInfoRepository.decrementStock(productInfoId, quantity);
+        if (updatedRows == 0) {
+            // 재고 감소 실패 시 예외 처리
+            throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT, "데이터베이스 재고가 부족합니다.");
+        }
 
         log.info("[decrementStock] 재고 감소 처리 완료 - productInfoId: {}, 남은 재고: {}",
                 productInfoId, currentStock - quantity);
