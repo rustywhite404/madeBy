@@ -1,5 +1,10 @@
 server:
   port: 8085
+  tomcat:
+    max-threads: 500          # 최대 스레드 수
+    accept-count: 5000         # 대기 큐의 최대 연결 수
+    connection-timeout: 20000 # 연결 타임아웃(ms)
+    max-connections: 10000
 
 spring:
   cloud:
@@ -11,6 +16,8 @@ spring:
     name: product-service
 
   datasource:
+    hikari:
+      maximum-pool-size: 120  # 최대 연결 수
     url: jdbc:mysql://localhost:3309/product_service
     username: root
     password: 1234 # MySQL root 비밀번호

@@ -29,7 +29,7 @@ public class HighConcurrencyOrderTest {
     private RedissonClient redissonClient;
 
     private static final Long PRODUCT_INFO_ID = 8L;
-    private static final int INITIAL_STOCK = 20;
+    private static final int INITIAL_STOCK = 10;
 
     @BeforeEach
     void setUp() {
@@ -42,7 +42,7 @@ public class HighConcurrencyOrderTest {
 
     @Test
     void testHighConcurrencyOrders() throws InterruptedException {
-        int numberOfUsers = 100; // 동시 주문 사용자 수
+        int numberOfUsers = 10000; // 동시 주문 사용자 수
         int threadPoolSize = 50; // 스레드풀 크기 설정
         ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
         CountDownLatch latch = new CountDownLatch(numberOfUsers);
@@ -58,7 +58,7 @@ public class HighConcurrencyOrderTest {
                     Thread.sleep((long) (Math.random() * 100)); // 0~100ms 간격
                     results[userId - 1] = orderService.placeOrder((long) userId, PRODUCT_INFO_ID, 1); // 결제 상태 저장
                 } catch (Exception e) {
-                    results[userId - 1] = PaymentStatus.FAILED; // 실패로 처리
+                    results[userId - 1] = PaymentStatus.SOLD_OUT; // 재고 부족으로 실패
                 } finally {
                     latch.countDown();
                 }
@@ -73,14 +73,16 @@ public class HighConcurrencyOrderTest {
         long successfulOrders = countResults(results, PaymentStatus.COMPLETED);
         long failedOrders = countResults(results, PaymentStatus.FAILED);
         long canceledOrders = countResults(results, PaymentStatus.CANCELED);
+        long soldOutOrders = countResults(results, PaymentStatus.SOLD_OUT);
 
         System.out.println("성공한 주문 수: " + successfulOrders);
-        System.out.println("실패한 주문 수(재고 부족): " + failedOrders);
+        System.out.println("실패한 주문 수(결제 실패): " + failedOrders);
+        System.out.println("실패한 주문 수(재고 부족): " + soldOutOrders);
         System.out.println("취소된 주문 수(결제 이탈): " + canceledOrders);
 
         // 검증 로직
         Assertions.assertEquals(INITIAL_STOCK, successfulOrders, "재고를 초과하지 않도록 성공한 주문은 재고와 일치해야 합니다.");
-        Assertions.assertEquals(numberOfUsers - successfulOrders - canceledOrders, failedOrders, "실패한 주문 수는 재고 초과로 인해 발생한 주문 수와 일치해야 합니다.");
+        Assertions.assertEquals(numberOfUsers - successfulOrders - canceledOrders - soldOutOrders, failedOrders, "실패한 주문 수는 결제 실패, 재고 부족, 결제 이탈을 합친 수와 일치해야 합니다.");
     }
     @AfterEach
     void tearDown() {
