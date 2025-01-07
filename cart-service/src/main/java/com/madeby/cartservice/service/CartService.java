@@ -7,6 +7,8 @@ import com.madeby.cartservice.client.UserServiceClient;
 import com.madeby.cartservice.dto.*;
 import com.madeby.cartservice.entity.Cart;
 import com.madeby.cartservice.repository.CartRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -53,6 +55,8 @@ public class CartService {
     }
 
     @Transactional
+    @CircuitBreaker(name = "myCircuitBreaker", fallbackMethod = "addProductFallback")
+    @Retry(name = "myCBRetry")
     public void addProduct(Long userId, Long productInfoId, int quantity) {
         // 1. 장바구니 조회 또는 생성
         Cart cart = getOrCreateCart(userId);
@@ -101,17 +105,6 @@ public class CartService {
         newCart.setCartProducts(new ArrayList<>()); // 명시적 초기화
         return cartRepository.save(newCart); // 바로 저장
     }
-
-    private ProductInfoDto getProductInfo(Long productInfoId) {
-        ProductInfoDto productInfo = productServiceClient.getProductInfoById(productInfoId);
-
-        if (productInfo == null || productInfo.getStock() <= 0) {
-            throw new MadeByException(MadeByErrorCode.NO_PRODUCT); // 상품이 존재하지 않거나 품절인 경우
-        }
-
-        return productInfo; // ProductInfoDto 반환
-    }
-
 
     private void saveCartToCache(String cacheKey, CartResponseDto cartDto) {
         if (cartDto != null) {
@@ -180,4 +173,19 @@ public class CartService {
             throw new MadeByException(MadeByErrorCode.USER_NOT_FOUND);
         }
     }
+
+    // Fallback 메서드
+    public void addProductFallback(Long userId, Long productInfoId, int quantity, Throwable throwable) {
+        log.error("[Fallback 실행 : addProduct] userId: {}, productInfoId: {}, quantity: {}, error: {}",
+                userId, productInfoId, quantity, throwable.getMessage());
+
+        // 사용자 정의 예외를 던짐
+        throw new MadeByException(
+                MadeByErrorCode.SERVICE_UNAVAILABLE, // 서비스 장애 코드
+                String.format("[Failed to add product] :(productInfoId: %d) to the cart for userId: %d. Reason: %s",
+                        productInfoId, userId, throwable.getMessage())
+        );
+    }
+
+
 }

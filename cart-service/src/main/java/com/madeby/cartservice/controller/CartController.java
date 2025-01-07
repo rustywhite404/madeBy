@@ -1,6 +1,7 @@
 package com.madeby.cartservice.controller;
 
 import com.madeBy.shared.common.ApiResponse;
+import com.madeBy.shared.exception.MadeByException;
 import com.madeby.cartservice.client.UserServiceClient;
 import com.madeby.cartservice.dto.CartProductRequestDto;
 import com.madeby.cartservice.dto.CartRequestDto;
@@ -10,6 +11,7 @@ import com.madeby.cartservice.service.CartService;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -68,10 +70,15 @@ public class CartController {
         if (userId == null || userId <= 0) {
             throw new IllegalArgumentException("유효한 user-id가 필요합니다.");
         }
+        try {
+            // 요청 처리
+            cartService.addProduct(userId, request.getProductInfoId(), request.getQuantity());
+            return ResponseEntity.ok(ApiResponse.success("상품이 장바구니에 추가되었습니다."));
+        } catch (MadeByException ex) {
+            log.error("상품을 장바구니에 추가하던 중 에러가 발생했습니다: {}", ex.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ApiResponse.failure(ex.getMadeByErrorCode().name(),ex.getMessage()));
+        }
 
-        // 요청 처리
-        cartService.addProduct(userId, request.getProductInfoId(), request.getQuantity());
-        return ResponseEntity.ok(ApiResponse.success("상품이 장바구니에 추가되었습니다."));
     }
 
 

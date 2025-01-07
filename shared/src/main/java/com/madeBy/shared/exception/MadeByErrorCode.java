@@ -39,6 +39,7 @@ public enum MadeByErrorCode {
     CANNOT_RETURN("배송 완료 상태인 상품만 반품 요청이 가능합니다."),
     RETURN_NOT_ALLOWED("해당 주문은 반품이 불가능합니다. 상세 사유는 고객센터에 문의하세요."),
     STOCK_UPDATE_FAILED("재고 업데이트에 실패했습니다."),
+    NO_PAYMENT("해당 주문에 대한 결제 정보를 찾을 수 없습니다."),
     
 
     DECRYPTION_ERROR("복호화에 실패했습니다."),
@@ -49,9 +50,9 @@ public enum MadeByErrorCode {
     REDIS_ROCK_ERROR("레디스 락 처리 중 문제가 발생했습니다."),
     CONCURRENCY_LOCK_FAILED("락 획득 중 문제가 발생했습니다."),
     RESOURCE_LOCK_FAILURE("리소스 잠금에 실패했습니다."),
+    SERVICE_UNAVAILABLE("서비스 장애가 발생했습니다. 나중에 다시 시도해주세요.");
 
 
-    NO_PAYMENT("해당 주문에 대한 결제 정보를 찾을 수 없습니다.");
 
 
     private final String message;
