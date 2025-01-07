@@ -24,30 +24,6 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    // 결제 진입 API
-    @PostMapping("/{orderId}/payment")
-    public ResponseEntity<ApiResponse<String>> initiatePayment(
-            @RequestHeader("X-User-Id") Long userId,
-            @PathVariable Long orderId) {
-
-        // 결제 진입 서비스 호출
-        orderService.initiatePayment(orderId, userId);
-
-        return ResponseEntity.ok(ApiResponse.success("결제 화면으로 진입하였습니다."));
-    }
-
-    // 결제 API
-    @PostMapping("/{orderId}/payment/process")
-    public ResponseEntity<ApiResponse<PaymentStatus>> processPayment(
-            @RequestHeader("X-User-Id") Long userId,
-            @PathVariable Long orderId) {
-
-        // 결제 처리 서비스 호출
-        PaymentStatus result = orderService.processPayment(orderId, userId);
-
-        return ResponseEntity.ok(ApiResponse.success(result));
-    }
-
     @PostMapping("/{orderId}/return")
     public ResponseEntity<Object> requestReturn(
             @PathVariable Long orderId,
@@ -58,28 +34,32 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success("반품 신청이 정상적으로 접수 되었습니다."));
     }
 
-
     @DeleteMapping("/{orderId}/cancel")
     public ResponseEntity<Object> cancelOrder(
             @PathVariable Long orderId,
             @RequestHeader("X-User-Id") Long userId) {
 
-        // 주문 취소 서비스 호출
+        // 서비스 호출
         orderService.cancelOrder(orderId, userId);
 
-        return ResponseEntity.ok(ApiResponse.success("주문이 정상적으로 취소 되었습니다."));
+        // 성공 응답 반환
+        return ResponseEntity.ok(ApiResponse.success("주문이 정상적으로 취소되었습니다."));
     }
 
     @PostMapping
-    public
-    ResponseEntity<ApiResponse<String>> placeOrder(
+    public ResponseEntity<Object> placeOrder(
             @RequestHeader("X-User-Id") Long userId,
             @RequestBody OrderRequestDto requestDto) {
+
+        // 유효성 검증
         if (requestDto.getQuantity() <= 0) {
-            throw new MadeByException(MadeByErrorCode.MIN_AMOUNT);
+            throw new MadeByException(MadeByErrorCode.MIN_AMOUNT, "주문 수량은 1개 이상이어야 합니다.");
         }
 
+        // 서비스 호출
         PaymentStatus status = orderService.placeOrder(userId, requestDto.getProductInfoId(), requestDto.getQuantity());
+
+        // 성공 응답 반환
         return ResponseEntity.ok(ApiResponse.success("주문이 성공적으로 완료되었습니다. 주문 상태: " + status));
     }
 
@@ -89,8 +69,8 @@ public class OrderController {
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate,
             @RequestParam(required = false, defaultValue = "0") Long cursor,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+            @RequestParam(defaultValue = "10") int size) {
+
         // 주문 내역 조회
         List<OrderResponseDto> orders = orderService.getOrders(userId, startDate, endDate, cursor, size);
 
@@ -98,18 +78,13 @@ public class OrderController {
     }
 
     @PostMapping("/cart")
-    public ResponseEntity<OrderResponseDto> placeOrderFromCart(
+    public ResponseEntity<Object> placeOrderFromCart(
             @RequestHeader("X-User-Id") Long userId,
             @RequestBody List<OrderRequestDto> orderRequestDtos) {
 
-        // 서비스 호출
         Long orderId = orderService.placeOrderFromCart(userId, orderRequestDtos);
-
-        // 주문 응답 생성
         Orders order = orderService.findOrderById(orderId);
         OrderResponseDto response = OrderResponseDto.fromEntity(order);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
-
 }

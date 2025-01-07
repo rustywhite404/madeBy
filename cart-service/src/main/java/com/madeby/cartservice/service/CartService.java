@@ -182,7 +182,7 @@ public class CartService {
         // 사용자 정의 예외를 던짐
         throw new MadeByException(
                 MadeByErrorCode.SERVICE_UNAVAILABLE, // 서비스 장애 코드
-                String.format("[Failed to add product] :(productInfoId: %d) to the cart for userId: %d. Reason: %s",
+                String.format("[Fallback 실행 : addProduct] :(productInfoId: %d) to the cart for userId: %d. Reason: %s",
                         productInfoId, userId, throwable.getMessage())
         );
     }

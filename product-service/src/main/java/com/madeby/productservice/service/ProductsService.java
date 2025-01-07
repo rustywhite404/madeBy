@@ -148,6 +148,7 @@ public class ProductsService {
     }
 
     public ProductInfoDto getProductInfo(Long productInfoId) {
+
         ProductInfo productInfo = productInfoRepository.findById(productInfoId).orElseThrow(
                 () -> new MadeByException(MadeByErrorCode.NO_PRODUCT)
         );

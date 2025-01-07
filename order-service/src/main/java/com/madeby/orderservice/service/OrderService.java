@@ -7,6 +7,8 @@ import com.madeby.orderservice.client.ProductServiceClient;
 import com.madeby.orderservice.dto.*;
 import com.madeby.orderservice.entity.*;
 import com.madeby.orderservice.repository.*;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
@@ -62,6 +64,8 @@ public class OrderService {
     }
 
     @Transactional
+    @CircuitBreaker(name = "myCircuitBreaker", fallbackMethod = "cancelOrderFallback")
+    @Retry(name = "myCBRetry")
     public void cancelOrder(Long orderId, Long userId) {
         // 1. 주문 조회
         Orders order = orderRepository.findById(orderId)
@@ -94,6 +98,8 @@ public class OrderService {
 
     //주문 생성(장바구니에서 여러 상품 주문)
     @Transactional
+    @CircuitBreaker(name = "myCircuitBreaker", fallbackMethod = "placeOrderFromCartFallback")
+    @Retry(name = "myCBRetry")
     public Long placeOrderFromCart(Long userId, List<OrderRequestDto> orderRequestDtos) {
 
         // 1. 유저 검증 로직 제거 (API Gateway가 이미 검증함)
@@ -204,6 +210,8 @@ public class OrderService {
 
     // 주문 생성(단일 상품 주문)
     @Transactional
+    @CircuitBreaker(name = "myCircuitBreaker", fallbackMethod = "placeOrderFallback")
+    @Retry(name = "myCBRetry")
     public PaymentStatus placeOrder(Long userId, Long productInfoId, int quantity) {
 
         // 1. 상품 정보 가져오기 (Feign Client 사용)
@@ -353,6 +361,32 @@ public class OrderService {
 
         log.info("결제 완료: 주문 ID = {}, 결제 상태 = {}", orderId, payment.getStatus());
         return PaymentStatus.COMPLETED;
+    }
+
+
+    // Fallback 메서드
+    public Long placeOrderFromCartFallback(Long userId, List<OrderRequestDto> orderRequestDtos, Throwable throwable) {
+        log.error("Fallback triggered for placeOrderFromCart. userId: {}, error: {}", userId, throwable.getMessage());
+        throw new MadeByException(
+                MadeByErrorCode.SERVICE_UNAVAILABLE,
+                "장바구니에서 주문을 생성할 수 없습니다. 잠시 후 다시 시도해주세요."
+        );
+    }
+
+    public PaymentStatus placeOrderFallback(Long userId, Long productInfoId, int quantity, Throwable throwable) {
+        log.error("Fallback triggered for placeOrder. userId: {}, productInfoId: {}, error: {}", userId, productInfoId, throwable.getMessage());
+        throw new MadeByException(
+                MadeByErrorCode.SERVICE_UNAVAILABLE,
+                "상품 주문을 처리할 수 없습니다. 잠시 후 다시 시도해주세요."
+        );
+    }
+
+    public void cancelOrderFallback(Long orderId, Long userId, Throwable throwable) {
+        log.error("Fallback triggered for cancelOrder. orderId: {}, userId: {}, error: {}", orderId, userId, throwable.getMessage());
+        throw new MadeByException(
+                MadeByErrorCode.SERVICE_UNAVAILABLE,
+                "주문을 취소할 수 없습니다. 잠시 후 다시 시도해주세요."
+        );
     }
 
 }
