@@ -1,5 +1,9 @@
 server:
   port: 9000
+  address: 0.0.0.0
+  tomcat:
+    max-threads: 300
+    accept-count: 1000
 
 spring:
   main:
@@ -7,7 +11,14 @@ spring:
   application:
     name: api-gateway
   cloud:
+    loadbalancer:
+      cache:
+        enabled: true
+        ttl: 300 # 캐시 유효 기간 (초 단위)
     gateway:
+      httpclient:
+        connect-timeout: 5000 # 5초
+        response-timeout: 20000 # 20초
       routes:
         - id: user-service
           uri: http://localhost:8082

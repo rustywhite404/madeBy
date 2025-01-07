@@ -7,6 +7,10 @@ spring:
   application:
     name: api-gateway
   cloud:
+    loadbalancer:
+      cache:
+        enabled: true
+        ttl: 300 # 캐시 유효 기간 (초 단위)
     gateway:
       routes:
         - id: user-service
