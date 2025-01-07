@@ -2,6 +2,7 @@ package com.madeby.orderservice.service;
 
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
+import com.madeBy.shared.exception.ServiceUnavailableException;
 import com.madeby.orderservice.client.CartServiceClient;
 import com.madeby.orderservice.client.ProductServiceClient;
 import com.madeby.orderservice.dto.*;
@@ -11,8 +12,6 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +21,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -210,8 +208,8 @@ public class OrderService {
 
     // 주문 생성(단일 상품 주문)
     @Transactional
-    @CircuitBreaker(name = "myCircuitBreaker", fallbackMethod = "placeOrderFallback")
-    @Retry(name = "myCBRetry")
+    //@CircuitBreaker(name = "myCircuitBreaker", fallbackMethod = "placeOrderFallback")
+    //@Retry(name = "myCBRetry")
     public PaymentStatus placeOrder(Long userId, Long productInfoId, int quantity) {
 
         // 1. 상품 정보 가져오기 (Feign Client 사용)
@@ -270,9 +268,11 @@ public class OrderService {
                 stockReservationService.cancelReservation(productInfoId, quantity);
             }
             return result;
-        } catch (Exception e) {
-            stockReservationService.cancelReservation(productInfoId, quantity); //예외 발생 시 재고 예약 취소
-            throw e;
+        }catch (Exception ex) {
+            // 재고 부족 처리: 서킷브레이커와 무관하며 재고 예약을 취소
+            log.warn("[Exception]: 예외 종류 ={}, productInfoId={}, userId={}, quantity={}", ex.getMessage(), productInfoId, userId, quantity);
+            stockReservationService.cancelReservation(productInfoId, quantity); // 재고 예약 취소
+            throw ex; // 이 예외는 서킷브레이커 무시 대상
         }
     }
 
@@ -361,32 +361,6 @@ public class OrderService {
 
         log.info("결제 완료: 주문 ID = {}, 결제 상태 = {}", orderId, payment.getStatus());
         return PaymentStatus.COMPLETED;
-    }
-
-
-    // Fallback 메서드
-    public Long placeOrderFromCartFallback(Long userId, List<OrderRequestDto> orderRequestDtos, Throwable throwable) {
-        log.error("Fallback triggered for placeOrderFromCart. userId: {}, error: {}", userId, throwable.getMessage());
-        throw new MadeByException(
-                MadeByErrorCode.SERVICE_UNAVAILABLE,
-                "장바구니에서 주문을 생성할 수 없습니다. 잠시 후 다시 시도해주세요."
-        );
-    }
-
-    public PaymentStatus placeOrderFallback(Long userId, Long productInfoId, int quantity, Throwable throwable) {
-        log.error("Fallback triggered for placeOrder. userId: {}, productInfoId: {}, error: {}", userId, productInfoId, throwable.getMessage());
-        throw new MadeByException(
-                MadeByErrorCode.SERVICE_UNAVAILABLE,
-                "상품 주문을 처리할 수 없습니다. 잠시 후 다시 시도해주세요."
-        );
-    }
-
-    public void cancelOrderFallback(Long orderId, Long userId, Throwable throwable) {
-        log.error("Fallback triggered for cancelOrder. orderId: {}, userId: {}, error: {}", orderId, userId, throwable.getMessage());
-        throw new MadeByException(
-                MadeByErrorCode.SERVICE_UNAVAILABLE,
-                "주문을 취소할 수 없습니다. 잠시 후 다시 시도해주세요."
-        );
     }
 
 }

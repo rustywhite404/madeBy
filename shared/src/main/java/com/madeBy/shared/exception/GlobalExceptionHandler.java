@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+
+
+
     @ExceptionHandler(MadeByException.class)
     public ResponseEntity<ApiResponse<?>> handleMadeByException(MadeByException ex, HttpServletRequest req) {
         log.warn("errorCode: {}, url: {}, message: {}", ex.getMadeByErrorCode(), req.getRequestURI(), ex.getDetailMessage());
@@ -56,6 +59,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.failure(MadeByErrorCode.INTERNAL_SERVER_ERROR.name(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ApiResponse<?>> handleServiceUnavailableException(ServiceUnavailableException ex, HttpServletRequest req) {
+        log.error("서비스 장애 - url: {}, message: {}", req.getRequestURI(), ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.failure("SERVICE_UNAVAILABLE", ex.getMessage()));
     }
 
 

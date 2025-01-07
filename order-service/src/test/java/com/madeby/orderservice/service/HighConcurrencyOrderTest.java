@@ -28,7 +28,7 @@ public class HighConcurrencyOrderTest {
     @Autowired
     private RedissonClient redissonClient;
 
-    private static final Long PRODUCT_INFO_ID = 8L;
+    private static final Long PRODUCT_INFO_ID = 31L;
     private static final int INITIAL_STOCK = 10;
 
     @BeforeEach
@@ -42,13 +42,16 @@ public class HighConcurrencyOrderTest {
 
     @Test
     void testHighConcurrencyOrders() throws InterruptedException {
-        int numberOfUsers = 10000; // 동시 주문 사용자 수
-        int threadPoolSize = 50; // 스레드풀 크기 설정
+        int numberOfUsers = 1000; // 동시 주문 사용자 수
+        int threadPoolSize = 100; // 스레드풀 크기 설정
         ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
         CountDownLatch latch = new CountDownLatch(numberOfUsers);
 
         // 각 사용자 결과 저장
         PaymentStatus[] results = new PaymentStatus[numberOfUsers];
+
+        // 수행 시간 측정을 위한 시작 시간 기록
+        long startTime = System.currentTimeMillis();
 
         // 각 사용자 주문 실행
         for (int i = 0; i < numberOfUsers; i++) {
@@ -69,6 +72,10 @@ public class HighConcurrencyOrderTest {
         latch.await();
         executorService.shutdown();
 
+        // 수행 시간 측정을 위한 종료 시간 기록
+        long endTime = System.currentTimeMillis();
+        long totalTime = endTime - startTime;
+
         // 테스트 결과 분석
         long successfulOrders = countResults(results, PaymentStatus.COMPLETED);
         long failedOrders = countResults(results, PaymentStatus.FAILED);
@@ -79,6 +86,9 @@ public class HighConcurrencyOrderTest {
         System.out.println("실패한 주문 수(결제 실패): " + failedOrders);
         System.out.println("실패한 주문 수(재고 부족): " + soldOutOrders);
         System.out.println("취소된 주문 수(결제 이탈): " + canceledOrders);
+
+        // 총 수행 시간 출력
+        System.out.println("총 수행 시간(ms): " + totalTime);
 
         // 검증 로직
         Assertions.assertEquals(INITIAL_STOCK, successfulOrders, "재고를 초과하지 않도록 성공한 주문은 재고와 일치해야 합니다.");

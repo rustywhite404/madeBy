@@ -34,9 +34,9 @@ dependencies {
     api 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6:2.15.2' // Hibernate 직렬화
 
     // Resilience4j 의존성 추가
-    api 'io.github.resilience4j:resilience4j-spring-boot3:2.0.2'
-    api 'io.github.resilience4j:resilience4j-circuitbreaker:2.0.2'
-    api 'io.github.resilience4j:resilience4j-retry:2.0.2'
+    api 'io.github.resilience4j:resilience4j-spring-boot3:2.1.0'
+    api 'io.github.resilience4j:resilience4j-circuitbreaker:2.1.0'
+    api 'io.github.resilience4j:resilience4j-retry:2.1.0'
 
     // Lombok 및 개발/테스트용 의존성
     api 'org.projectlombok:lombok'

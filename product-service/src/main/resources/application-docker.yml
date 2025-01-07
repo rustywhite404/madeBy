@@ -1,16 +1,23 @@
 server:
   port: 8085
+  tomcat:
+    max-threads: 300          # 최대 스레드 수
+    accept-count: 3000         # 대기 큐의 최대 연결 수
+    connection-timeout: 20000 # 연결 타임아웃(ms)
+    max-connections: 900
 
 spring:
   cloud:
     loadbalancer:
       cache:
         enabled: true
-        ttl: 300 # 캐시 유효 기간 (초 단위)
+        ttl: 120 # 캐시 유효 기간 (초 단위)
   application:
     name: product-service
 
   datasource:
+    hikari:
+      maximum-pool-size: 100  # 최대 연결 수
     url: jdbc:mysql://madeby-db:3306/product_service
     username: root
     password: 1234 # MySQL root 비밀번호
