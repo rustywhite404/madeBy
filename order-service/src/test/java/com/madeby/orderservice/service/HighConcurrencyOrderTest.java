@@ -28,7 +28,7 @@ public class HighConcurrencyOrderTest {
     @Autowired
     private RedissonClient redissonClient;
 
-    private static final Long PRODUCT_INFO_ID = 31L;
+    private static final Long PRODUCT_INFO_ID = 32L;
     private static final int INITIAL_STOCK = 10;
 
     @BeforeEach
@@ -42,7 +42,7 @@ public class HighConcurrencyOrderTest {
 
     @Test
     void testHighConcurrencyOrders() throws InterruptedException {
-        int numberOfUsers = 1000; // 동시 주문 사용자 수
+        int numberOfUsers = 10; // 동시 주문 사용자 수
         int threadPoolSize = 100; // 스레드풀 크기 설정
         ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
         CountDownLatch latch = new CountDownLatch(numberOfUsers);

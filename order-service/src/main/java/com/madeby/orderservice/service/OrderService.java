@@ -2,14 +2,13 @@ package com.madeby.orderservice.service;
 
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
-import com.madeBy.shared.exception.ServiceUnavailableException;
 import com.madeby.orderservice.client.CartServiceClient;
 import com.madeby.orderservice.client.ProductServiceClient;
 import com.madeby.orderservice.dto.*;
 import com.madeby.orderservice.entity.*;
-import com.madeby.orderservice.repository.*;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
+import com.madeby.orderservice.repository.OrderProductSnapshotRepository;
+import com.madeby.orderservice.repository.OrderRepository;
+import com.madeby.orderservice.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -62,8 +61,6 @@ public class OrderService {
     }
 
     @Transactional
-    @CircuitBreaker(name = "myCircuitBreaker", fallbackMethod = "cancelOrderFallback")
-    @Retry(name = "myCBRetry")
     public void cancelOrder(Long orderId, Long userId) {
         // 1. 주문 조회
         Orders order = orderRepository.findById(orderId)
@@ -96,8 +93,6 @@ public class OrderService {
 
     //주문 생성(장바구니에서 여러 상품 주문)
     @Transactional
-    @CircuitBreaker(name = "myCircuitBreaker", fallbackMethod = "placeOrderFromCartFallback")
-    @Retry(name = "myCBRetry")
     public Long placeOrderFromCart(Long userId, List<OrderRequestDto> orderRequestDtos) {
 
         // 1. 유저 검증 로직 제거 (API Gateway가 이미 검증함)
@@ -208,8 +203,6 @@ public class OrderService {
 
     // 주문 생성(단일 상품 주문)
     @Transactional
-    //@CircuitBreaker(name = "myCircuitBreaker", fallbackMethod = "placeOrderFallback")
-    //@Retry(name = "myCBRetry")
     public PaymentStatus placeOrder(Long userId, Long productInfoId, int quantity) {
 
         // 1. 상품 정보 가져오기 (Feign Client 사용)
@@ -272,7 +265,7 @@ public class OrderService {
             // 재고 부족 처리: 서킷브레이커와 무관하며 재고 예약을 취소
             log.warn("[Exception]: 예외 종류 ={}, productInfoId={}, userId={}, quantity={}", ex.getMessage(), productInfoId, userId, quantity);
             stockReservationService.cancelReservation(productInfoId, quantity); // 재고 예약 취소
-            throw ex; // 이 예외는 서킷브레이커 무시 대상
+            throw ex;
         }
     }
 

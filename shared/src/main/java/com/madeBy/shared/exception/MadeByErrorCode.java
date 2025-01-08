@@ -28,6 +28,7 @@ public enum MadeByErrorCode {
     NOT_ENOUGH_PRODUCT("상품이 충분하지 않습니다. 주문 가능 수량을 확인해주세요."),
     NO_WISHLIST("위시리스트에 등록된 상품이 없습니다."),
     DUPLICATED_WISHLIST("이미 위시리스트에 등록된 상품입니다."),
+    BUY_FAILED("상품 구매에 실패하였습니다."),
 
     NO_ORDER("주문 내역이 존재하지 않습니다."),
     DECREMENT_STOCK_FAILURE("상품 구매에 실패했습니다. 재고를 다시 확인해주세요."),

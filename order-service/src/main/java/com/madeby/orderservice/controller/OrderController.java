@@ -59,8 +59,13 @@ public class OrderController {
         // 서비스 호출
         PaymentStatus status = orderService.placeOrder(userId, requestDto.getProductInfoId(), requestDto.getQuantity());
 
-        // 성공 응답 반환
-        return ResponseEntity.ok(ApiResponse.success("주문이 성공적으로 완료되었습니다. 주문 상태: " + status));
+        if (status == PaymentStatus.COMPLETED) {
+            // 주문 성공 시
+            return ResponseEntity.ok(ApiResponse.success("주문이 성공적으로 완료되었습니다. 주문 상태: " + status));
+        } else {
+            // 주문 실패 시
+            return ResponseEntity.badRequest().body(ApiResponse.failure(MadeByErrorCode.BUY_FAILED.name(), "주문에 실패했습니다. 주문 상태: " + status));
+        }
     }
 
     @GetMapping
