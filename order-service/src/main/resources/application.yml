@@ -4,8 +4,8 @@ spring:
       - dev
   datasource:
     hikari:
-      maximum-pool-size: 100         # 최대 커넥션 개수
-      minimum-idle: 20              # 최소 유휴 커넥션 개수
+      maximum-pool-size: 200         # 최대 커넥션 개수
+      minimum-idle: 30              # 최소 유휴 커넥션 개수
       connection-timeout: 3000      # 커넥션 타임아웃 (ms)
       idle-timeout: 600000         # 유휴 커넥션 타임아웃 (ms)
       max-lifetime: 1800000        # 커넥션 최대 수명 (ms)

@@ -17,8 +17,8 @@ spring:
 
   datasource:
     hikari:
-      maximum-pool-size: 100  # 최대 연결 수
-    url: jdbc:mysql://localhost:3309/product_service
+      maximum-pool-size: 150  # 최대 연결 수
+    url: jdbc:mysql://localhost:33011/product_service
     username: root
     password: 1234 # MySQL root 비밀번호
   jpa:
