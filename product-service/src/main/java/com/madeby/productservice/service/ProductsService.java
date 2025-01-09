@@ -204,4 +204,17 @@ public class ProductsService {
             return false;
         }
     }
+
+    @Transactional
+    public List<ProductsDto> searchProductsByName(String name) {
+        List<Products> products = productsRepository.findByNameContainingAndIsVisibleTrue(name);
+
+        if (products.isEmpty()) {
+            throw new MadeByException(MadeByErrorCode.NO_SEARCH_RESULT);
+        }
+
+        return products.stream()
+                .map(this::convertToProductsDto)
+                .collect(Collectors.toList());
+    }
 }

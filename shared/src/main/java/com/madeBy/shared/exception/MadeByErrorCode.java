@@ -23,6 +23,7 @@ public enum MadeByErrorCode {
     DUPLICATED_DATA("중복된 데이터가 존재합니다."),
 
     NO_PRODUCT("상품이 존재하지 않습니다."),
+    NO_SEARCH_RESULT("검색 결과가 존재하지 않습니다."),
     NO_SELLING_PRODUCT("현재 판매중인 상품이 아닙니다."),
     SOLD_OUT("상품이 품절되었습니다."),
     NOT_ENOUGH_PRODUCT("상품이 충분하지 않습니다. 주문 가능 수량을 확인해주세요."),

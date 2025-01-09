@@ -6,6 +6,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ProductsRepository extends JpaRepository<Products, Long> {
@@ -18,5 +19,8 @@ public interface ProductsRepository extends JpaRepository<Products, Long> {
     // 상품과 연관된 ProductInfo를 함께 조회, 즉시 로딩을 강제로 설정(fetch join)
     @EntityGraph(attributePaths = {"productInfos"})
     Optional<Products> findByIdAndIsVisibleTrue(Long id);
+
+    //name으로 검색
+    List<Products> findByNameContainingAndIsVisibleTrue(String name);
 }
 

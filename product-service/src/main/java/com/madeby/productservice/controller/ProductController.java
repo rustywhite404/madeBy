@@ -48,7 +48,7 @@ public class ProductController {
 
     //상품 목록 보기
     @GetMapping("/products")
-    public  ResponseEntity<ApiResponse<List<ProductsDto>>> getProducts(
+    public ResponseEntity<ApiResponse<List<ProductsDto>>> getProducts(
             @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "10") int size) {
         if (size <= 0 || size > 100) {
@@ -69,17 +69,28 @@ public class ProductController {
 
     //상품 상세 한개만 가져오기(카트에 등록할 때 사용)
     @GetMapping("/products/info/{productInfoId}")
-    public
-    ProductInfoDto getProductInfo(@PathVariable Long productInfoId) {
+    public ProductInfoDto getProductInfo(@PathVariable Long productInfoId) {
         return productsService.getProductInfo(productInfoId);
     }
 
     //상품 상세 보기
     @GetMapping("/products/detail/{productId}")
-    public
-    ResponseEntity<ApiResponse<ProductsDto>> getProductDetail(@PathVariable Long productId) {
+    public ResponseEntity<ApiResponse<ProductsDto>> getProductDetail(@PathVariable Long productId) {
         ProductsDto productDetail = productsService.getProductWithInfos(productId);
         return ResponseEntity.ok(ApiResponse.success(productDetail));
     }
 
+    //상품 검색
+    @GetMapping("/products/search")
+    public ResponseEntity<ApiResponse<List<ProductsDto>>> searchProducts(@RequestParam String name) {
+        long startTime = System.currentTimeMillis();
+        log.info("상품 검색 시작: 검색어 = {}", name);
+
+        List<ProductsDto> searchResult = productsService.searchProductsByName(name);
+
+        long endTime = System.currentTimeMillis();
+        log.info("상품 검색 완료: 검색어 = {}, 검색결과 수 = {}개, 소요시간 = {}ms", name, searchResult.size(), endTime - startTime);
+
+        return ResponseEntity.ok(ApiResponse.success(searchResult));
+    }
 }
