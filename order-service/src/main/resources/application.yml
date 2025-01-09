@@ -4,19 +4,14 @@ spring:
       - dev
   datasource:
     hikari:
-      maximum-pool-size: 200         # 최대 커넥션 개수
-      minimum-idle: 30              # 최소 유휴 커넥션 개수
-      connection-timeout: 3000      # 커넥션 타임아웃 (ms)
-      idle-timeout: 600000         # 유휴 커넥션 타임아웃 (ms)
-      max-lifetime: 1800000        # 커넥션 최대 수명 (ms)
+      maximum-pool-size: 450       # MySQL max_connections 제한의 90%
+      minimum-idle: 50            # 최소 유휴 커넥션 수
+      connection-timeout: 3000    # 커넥션 대기 타임아웃 (ms)
 
 server:
   tomcat:
     threads:
-      max-threads: 200          # 최대 처리 스레드 수를 충분히 늘림
-      accept-count: 500         # 대기 중인 요청 큐 크기
-      connection-timeout: 20000  # 연결 타임아웃 (밀리초)
-      min-spare: 20               # 최소 유휴 스레드 개수
-    max-connections: 500         # 최대 동시 연결 수
-    accept-count: 100            # 대기열 크기
-    connection-timeout: 5000     # 커넥션 타임아웃 (ms)
+      max-threads: 500            # Tomcat 최대 워커 스레드 수
+      accept-count: 800           # 요청 대기열 크기
+    max-connections: 1000         # Tomcat의 최대 동시 연결 수
+    connection-timeout: 5000      # 연결 타임아웃 (ms)

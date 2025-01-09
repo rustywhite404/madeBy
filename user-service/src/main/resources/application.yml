@@ -2,3 +2,16 @@ spring:
   profiles:
     active:
       - dev
+  datasource:
+    hikari:
+      maximum-pool-size: 450       # MySQL max_connections 제한의 90%
+      minimum-idle: 50            # 최소 유휴 커넥션 수
+      connection-timeout: 3000    # 커넥션 대기 타임아웃 (ms)
+
+server:
+  tomcat:
+    threads:
+      max-threads: 500            # Tomcat 최대 워커 스레드 수
+      accept-count: 800           # 요청 대기열 크기
+    max-connections: 1000         # Tomcat의 최대 동시 연결 수
+    connection-timeout: 5000      # 연결 타임아웃 (ms)
