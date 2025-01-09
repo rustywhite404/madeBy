@@ -25,8 +25,9 @@ public class ProductServiceClient {
     }
 
     public ProductsDto getProductFallback(Long productId, Throwable throwable) {
-        log.error("[Fallback] 제품 정보 가져오기 실패. productId={}, error={}", productId, throwable.getMessage());
-        return null; // 기본값 반환 또는 에러 처리
+        log.error("[Fallback] 제품 정보 가져오기 실패. productId={}, error={}, errorDetail={}",
+                productId, throwable.getMessage(), throwable);
+        throw new RuntimeException("상품 서비스 일시적 장애: " + throwable.getMessage());
     }
 
     @CircuitBreaker(name = "productServiceCircuitBreaker", fallbackMethod = "getProductInfoFallback")
@@ -36,18 +37,21 @@ public class ProductServiceClient {
     }
 
     public ProductInfoDto getProductInfoFallback(Long productInfoId, Throwable throwable) {
-        log.error("[Fallback] 제품 상세 정보 가져오기 실패. productInfoId={}, error={}", productInfoId, throwable.getMessage());
-        return null;
+        log.error("[Fallback] 제품 상세 정보 가져오기 실패. productInfoId={}, error={}, errorDetail={}",
+                productInfoId, throwable.getMessage(), throwable);
+        throw new RuntimeException("상품 정보 서비스 일시적 장애: " + throwable.getMessage());
     }
 
     @CircuitBreaker(name = "productServiceCircuitBreaker", fallbackMethod = "decrementStockFallback")
     @Retry(name = "productServiceRetry")
     public boolean decrementStock(Long productInfoId, int quantity) {
-        return feignClient.decrementStock(productInfoId, quantity);
+        boolean result = feignClient.decrementStock(productInfoId, quantity);
+        return result;
     }
 
     public boolean decrementStockFallback(Long productInfoId, int quantity, Throwable throwable) {
-        log.error("[Fallback] 재고 차감 실패. productInfoId={}, quantity={}, error={}", productInfoId, quantity, throwable.getMessage());
+        log.error("[Fallback] 재고 차감 실패. productInfoId={}, quantity={}, error={}, errorDetail={}",
+                productInfoId, quantity, throwable.getMessage(), throwable);
         return false; // 실패 시 false 반환
     }
 
@@ -58,7 +62,8 @@ public class ProductServiceClient {
     }
 
     public boolean updateStockFallback(Long productInfoId, int quantity, Throwable throwable) {
-        log.error("[Fallback] 재고 업데이트 실패. productInfoId={}, quantity={}, error={}", productInfoId, quantity, throwable.getMessage());
+        log.error("[Fallback] 재고 업데이트 실패. productInfoId={}, quantity={}, error={}, errorDetail={}",
+                productInfoId, quantity, throwable.getMessage(), throwable);
         return false;
     }
 }

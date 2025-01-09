@@ -38,12 +38,12 @@ public class ProductController {
     }
 
     @PostMapping("/products/{productInfoId}/decrement-stock")
-    public ResponseEntity<Void> decrementStock(
+    public ResponseEntity<Boolean> decrementStock(
             @PathVariable Long productInfoId,
             @RequestParam int quantity) {
         log.info("[decrementStock] 요청 수신 - productInfoId: {}, quantity: {}", productInfoId, quantity);
-        productsService.decrementStock(productInfoId, quantity);
-        return ResponseEntity.ok().build();
+        boolean result = productsService.decrementStock(productInfoId, quantity);
+        return ResponseEntity.ok(result);
     }
 
     //상품 목록 보기
