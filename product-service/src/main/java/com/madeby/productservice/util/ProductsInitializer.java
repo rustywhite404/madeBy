@@ -1,5 +1,8 @@
 package com.madeby.productservice.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.madeby.productservice.client.NaverApiClient;
 import com.madeby.productservice.entity.ProductInfo;
 import com.madeby.productservice.entity.Products;
 import com.madeby.productservice.repository.ProductsRepository;
@@ -10,12 +13,26 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Component
 @RequiredArgsConstructor
 public class ProductsInitializer {
-
     private final ProductsRepository productsRepository;
+    private final NaverApiClient naverApiClient;
+
+    private static final int ITEMS_PER_REQUEST = 100; // 한 번의 요청당 가져올 상품 수
+    private static final List<String> KEYWORDS = List.of(
+            // 더미 키워드 예시
+            "아웃도어용배낭", "클라이밍카라비너", "등산지도", "하이킹용스틱", "캠핑화로대",
+            "낚시의자", "폴딩카트", "스노클세트", "야외용텐트", "라운지체어",
+            "조립식텐트", "그늘막", "캠핑수납박스", "캠핑테이블웨어", "다용도랜턴"
+    );
+
+    private static final List<String> COLORS = List.of("Red", "Blue", "Green", "Black", "White");
+    private static final List<String> SIZES = List.of("S", "M", "L", "XL");
+
+    private final Random random = new Random();
 
     @PostConstruct
     public void initializeProducts() {
@@ -23,64 +40,56 @@ public class ProductsInitializer {
             return; // 이미 데이터가 있다면 초기화하지 않음
         }
 
-        List<Products> productsList = new ArrayList<>();
+        ObjectMapper objectMapper = new ObjectMapper();
 
-        // 일반 상품 생성
-        for (int i = 1; i <= 10; i++) {
-            Products product = Products.builder()
-                    .name("General Product " + i)
-                    .category("Category " + ((i % 3) + 1)) // 3개의 카테고리 순환
-                    .description("Description for General Product " + i)
-                    .image("general_image" + i + ".jpg")
-                    .isVisible(true) // 일반 상품은 기본적으로 보임
-                    .build();
+        for (String keyword : KEYWORDS) {
+            try {
+                // 네이버 API 호출
+                String response = naverApiClient.searchProducts(keyword, 1, ITEMS_PER_REQUEST);
+                JsonNode rootNode = objectMapper.readTree(response);
+                JsonNode items = rootNode.path("items");
 
-            List<ProductInfo> productInfos = new ArrayList<>();
-            for (int j = 1; j <= 3; j++) { // 각 상품에 대해 3개의 옵션 생성
-                ProductInfo info = ProductInfo.builder()
-                        .products(product)
-                        .price(BigDecimal.valueOf(1000 + (j * 100) + (i * 10))) // 가격
-                        .stock(50 + (i * 5)) // 재고
-                        .size("Size " + j) // 사이즈
-                        .color("Color " + j) // 색상
-                        .isLimited(false) // 일반 상품 옵션
-                        .build();
+                if (items.isEmpty()) {
+                    System.out.println("키워드 [" + keyword + "]로 데이터가 없습니다.");
+                    continue; // 데이터가 없으면 다음 키워드로 진행
+                }
 
-                productInfos.add(info);
+                // 가져온 데이터를 저장할 리스트 생성
+                List<Products> productsList = new ArrayList<>();
+                for (JsonNode item : items) {
+                    Products product = Products.builder()
+                            .name(item.path("title").asText().replaceAll("<[^>]*>", "")) // HTML 태그 제거
+                            .category(keyword)
+                            .description(item.path("description").asText())
+                            .image(item.path("image").asText())
+                            .isVisible(true)
+                            .build();
+
+                    // 임의의 ProductInfo 생성
+                    List<ProductInfo> productInfos = new ArrayList<>();
+                    for (int j = 1; j <= 2; j++) {
+                        ProductInfo info = ProductInfo.builder()
+                                .products(product)
+                                .price(BigDecimal.valueOf(50000 + random.nextInt(450000))) // 50000 ~ 500000 사이 랜덤 가격
+                                .stock(100 + random.nextInt(50)) // 100 ~ 150 랜덤 재고
+                                .size(SIZES.get(random.nextInt(SIZES.size()))) // 랜덤 사이즈
+                                .color(COLORS.get(random.nextInt(COLORS.size()))) // 랜덤 컬러
+                                .isLimited(false)
+                                .build();
+                        productInfos.add(info);
+                    }
+
+                    product.setProductInfos(productInfos);
+                    productsList.add(product);
+                }
+
+                // 키워드에 대한 데이터 저장
+                productsRepository.saveAll(productsList);
+                System.out.println("키워드 [" + keyword + "]로 100개의 데이터를 저장했습니다.");
+
+            } catch (Exception e) {
+                System.err.println("키워드 [" + keyword + "] 처리 중 오류 발생: " + e.getMessage());
             }
-
-            product.setProductInfos(productInfos);
-            productsList.add(product);
         }
-
-        // 한정 상품 생성
-        for (int i = 1; i <= 5; i++) {
-            Products product = Products.builder()
-                    .name("Limited Product " + i)
-                    .category("Limited Category " + ((i % 2) + 1)) // 2개의 카테고리 순환
-                    .description("Description for Limited Product " + i)
-                    .image("limited_image" + i + ".jpg")
-                    .build();
-
-            List<ProductInfo> productInfos = new ArrayList<>();
-            for (int j = 1; j <= 2; j++) { // 각 한정 상품에 대해 2개의 옵션 생성
-                ProductInfo info = ProductInfo.builder()
-                        .products(product)
-                        .price(BigDecimal.valueOf(2000 + (j * 150) + (i * 20))) // 가격
-                        .stock(10 + (i * 2)) // 재고
-                        .size("Limited Size " + j) // 사이즈
-                        .color("Limited Color " + j) // 색상
-                        .isLimited(true) // 한정 상품 옵션
-                        .isVisible(false) // 한정 상품은 기본적으로 보이지 않음
-                        .build();
-
-                productInfos.add(info);
-            }
-
-            product.setProductInfos(productInfos);
-            productsList.add(product);
-        }
-
-        productsRepository.saveAll(productsList);
     }
 }
