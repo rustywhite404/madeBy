@@ -13,8 +13,7 @@ public class LimitedProductScheduler {
 
     private final ProductsService productsService;
 
-    @Scheduled(cron = "0 27 14 * * ?") // 매일 오후 2시 실행
-
+    @Scheduled(cron = "0 17 16 * * ?") // 매일 오후 3시 30분 실행
     public void scheduleLimitedProductsVisibilityUpdate() {
         log.info("[한정상품 공개]--------스케줄러 실행");
         productsService.updateLimitedProductsVisibility();

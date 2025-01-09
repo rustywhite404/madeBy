@@ -221,56 +221,49 @@ public class OrderService {
             throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT);
         }
         log.info("재고 예약 성공: productInfoId = {}, quantity = {}", productInfoId, quantity);
-        try {
 
-            // 4. 주문 생성 및 저장
-            Orders order = Orders.builder()
-                    .userId(userId)
-                    .status(OrderStatus.ORDERED)
-                    .isReturnable(true) // 기본값으로 설정
-                    .build();
-            orderRepository.save(order);
+        // 4. 주문 생성 및 저장
+        Orders order = Orders.builder()
+                .userId(userId)
+                .status(OrderStatus.ORDERED)
+                .isReturnable(true) // 기본값으로 설정
+                .build();
+        orderRepository.save(order);
 
-            // 4-1. 주문 상품 스냅샷 생성
-            OrderProductSnapshot snapshot = OrderProductSnapshot.builder()
-                    .orders(order)
-                    .productInfoId(productInfoDto.getId())
-                    .stock(productInfoDto.getStock()) // ProductInfoDto에서 재고 가져오기
-                    .size(productInfoDto.getSize()) // ProductsDto에서 사이즈 가져오기
-                    .color(productInfoDto.getColor()) // ProductsDto에서 색상 가져오기
-                    .quantity(quantity) // 요청된 수량
-                    .price(productInfoDto.getPrice()) // ProductInfoDto에서 가격 가져오기
-                    .totalAmount(productInfoDto.getPrice().multiply(BigDecimal.valueOf(quantity))) // 총 금액 계산
-                    .build();
-            snapshotRepository.save(snapshot);
+        // 4-1. 주문 상품 스냅샷 생성
+        OrderProductSnapshot snapshot = OrderProductSnapshot.builder()
+                .orders(order)
+                .productInfoId(productInfoDto.getId())
+                .stock(productInfoDto.getStock()) // ProductInfoDto에서 재고 가져오기
+                .size(productInfoDto.getSize()) // ProductsDto에서 사이즈 가져오기
+                .color(productInfoDto.getColor()) // ProductsDto에서 색상 가져오기
+                .quantity(quantity) // 요청된 수량
+                .price(productInfoDto.getPrice()) // ProductInfoDto에서 가격 가져오기
+                .totalAmount(productInfoDto.getPrice().multiply(BigDecimal.valueOf(quantity))) // 총 금액 계산
+                .build();
+        snapshotRepository.save(snapshot);
 
-            // 5. 결제 화면 진입 처리
-            initiatePayment(order.getId(), userId);
+        // 5. 결제 화면 진입 처리
+        initiatePayment(order.getId(), userId);
 
-            // 6. 결제 시도 (모의 결제)
-            PaymentStatus result = processPayment(order.getId(), userId);
+        // 6. 결제 시도 (모의 결제)
+        PaymentStatus result = processPayment(order.getId(), userId);
 
-            // 7. 결제 결과 처리
-            if (result == PaymentStatus.COMPLETED) {
-                log.info("결제 성공: 주문 ID = {}", order.getId());
-                // DB에 최종 재고 반영
-                boolean decrementSuccess = productServiceClient.decrementStock(productInfoId, quantity);
-                if (!decrementSuccess) {
-                    stockReservationService.cancelReservation(productInfoId, quantity);
-                    throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT, "재고가 부족합니다");
-                }
-            } else {
-                log.info("결제 실패 또는 이탈: 주문 ID = {}", order.getId());
-                // Redis에 재고 복구
+        // 7. 결제 결과 처리
+        if (result == PaymentStatus.COMPLETED) {
+            log.info("결제 성공: 주문 ID = {}", order.getId());
+            // DB에 최종 재고 반영
+            boolean decrementSuccess = productServiceClient.decrementStock(productInfoId, quantity);
+            if (!decrementSuccess) {
                 stockReservationService.cancelReservation(productInfoId, quantity);
+                throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT, "재고가 부족합니다");
             }
-            return result;
-        }catch (Exception ex) {
-            // 재고 부족 처리: 서킷브레이커와 무관하며 재고 예약을 취소
-            log.warn("[Exception]: 예외 종류 ={}, productInfoId={}, userId={}, quantity={}", ex.getMessage(), productInfoId, userId, quantity);
-            stockReservationService.cancelReservation(productInfoId, quantity); // 재고 예약 취소
-            throw ex;
+        } else {
+            log.info("결제 실패 또는 이탈: 주문 ID = {}", order.getId());
+            // Redis에 재고 복구
+            stockReservationService.cancelReservation(productInfoId, quantity);
         }
+        return result;
     }
 
     // 주문 조회(조회만 수행하므로 읽기 전용 트랜잭션)
