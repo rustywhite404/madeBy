@@ -10,13 +10,12 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-
-
 
     @ExceptionHandler(MadeByException.class)
     public ResponseEntity<ApiResponse<?>> handleMadeByException(MadeByException ex, HttpServletRequest req) {
@@ -37,12 +36,12 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<?>> handleException(Exception ex, HttpServletRequest req) {
-        log.error("예상치 못한 예외 - url: {}, message: {}", req.getRequestURI(), ex.getMessage());
+    public Mono<ResponseEntity<ApiResponse<?>>> handleException(Exception ex, ServerHttpRequest request) {
+        log.error("예상치 못한 에러 발생 - url: {}, message: {}", request.getURI(), ex.getMessage());
 
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.failure(MadeByErrorCode.INTERNAL_SERVER_ERROR.name(), MadeByErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
+        return Mono.just(ResponseEntity
+                .badRequest()
+                .body(ApiResponse.failure(MadeByErrorCode.INTERNAL_SERVER_ERROR.name(), ex.getMessage())));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

@@ -42,12 +42,13 @@ public class ProductServiceClient {
 
     @CircuitBreaker(name = "productServiceCircuitBreaker", fallbackMethod = "decrementStockFallback")
     @Retry(name = "productServiceRetry")
-    public void decrementStock(Long productInfoId, int quantity) {
-        feignClient.decrementStock(productInfoId, quantity);
+    public boolean decrementStock(Long productInfoId, int quantity) {
+        return feignClient.decrementStock(productInfoId, quantity);
     }
 
-    public void decrementStockFallback(Long productInfoId, int quantity, Throwable throwable) {
+    public boolean decrementStockFallback(Long productInfoId, int quantity, Throwable throwable) {
         log.error("[Fallback] 재고 차감 실패. productInfoId={}, quantity={}, error={}", productInfoId, quantity, throwable.getMessage());
+        return false; // 실패 시 false 반환
     }
 
     @CircuitBreaker(name = "productServiceCircuitBreaker", fallbackMethod = "updateStockFallback")

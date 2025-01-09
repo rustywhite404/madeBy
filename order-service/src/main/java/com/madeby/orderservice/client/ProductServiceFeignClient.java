@@ -17,7 +17,7 @@ public interface ProductServiceFeignClient {
     ProductInfoDto getProductInfo(@PathVariable("productInfoId") Long productInfoId);
 
     @PostMapping("/api/products/{productInfoId}/decrement-stock")
-    void decrementStock(@PathVariable("productInfoId") Long productInfoId, @RequestParam("quantity") int quantity);
+    boolean decrementStock(@PathVariable("productInfoId") Long productInfoId, @RequestParam("quantity") int quantity);
 
     @PostMapping("/api/products/{productInfoId}/update-stock")
     boolean updateStock(@PathVariable("productInfoId") Long productInfoId, @RequestParam("quantity") int quantity);

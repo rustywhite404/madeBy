@@ -190,13 +190,18 @@ public class ProductsService {
     }
 
     @Transactional
-    public void decrementStock(Long productInfoId, int quantity) {
-
-        // 데이터베이스에서 재고 감소
-        int updatedRows = productInfoRepository.decrementStock(productInfoId, quantity);
-        if (updatedRows == 0) {
-            throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT, "데이터베이스 재고가 부족합니다.");
+    public boolean decrementStock(Long productInfoId, int quantity) {
+        try {
+            // 데이터베이스에서 재고 감소
+            int updatedRows = productInfoRepository.decrementStock(productInfoId, quantity);
+            if (updatedRows == 0) {
+                log.warn("재고 부족: productInfoId = {}, 요청 수량 = {}", productInfoId, quantity);
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("재고 감소 실패: productInfoId = {}, 오류 = {}", productInfoId, e.getMessage());
+            return false;
         }
-        log.info("------------DB 재고 감소 완료: productInfoId = {}, 감소량 = {}", productInfoId, quantity);
     }
 }

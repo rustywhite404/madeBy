@@ -254,7 +254,11 @@ public class OrderService {
             if (result == PaymentStatus.COMPLETED) {
                 log.info("결제 성공: 주문 ID = {}", order.getId());
                 // DB에 최종 재고 반영
-                productServiceClient.decrementStock(productInfoId, quantity);
+                boolean decrementSuccess = productServiceClient.decrementStock(productInfoId, quantity);
+                if (!decrementSuccess) {
+                    stockReservationService.cancelReservation(productInfoId, quantity);
+                    throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT, "재고가 부족합니다");
+                }
             } else {
                 log.info("결제 실패 또는 이탈: 주문 ID = {}", order.getId());
                 // Redis에 재고 복구
