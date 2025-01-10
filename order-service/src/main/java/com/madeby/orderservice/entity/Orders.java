@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(indexes = {
+        @Index(name = "idx_orders_user_date", columnList = "user_id, created_at")
+})
 @Getter
 @Setter
 @Builder

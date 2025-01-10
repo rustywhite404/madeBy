@@ -9,6 +9,10 @@ import org.hibernate.annotations.Comment;
 import java.math.BigDecimal;
 
 @Entity
+@Table(name = "product_info", indexes = {
+        @Index(name = "idx_product_info_stock", columnList = "id,stock"),
+        @Index(name = "idx_product_info_visible", columnList = "is_visible")
+})
 @Getter
 @Setter
 @Builder

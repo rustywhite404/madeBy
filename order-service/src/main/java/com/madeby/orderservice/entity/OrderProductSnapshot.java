@@ -7,6 +7,10 @@ import org.hibernate.annotations.Comment;
 import java.math.BigDecimal;
 
 @Entity
+@Table(indexes = {
+        @Index(name = "idx_order_product_info", columnList = "orders_id, product_info_id"),
+        @Index(name = "idx_product_info", columnList = "product_info_id")
+})
 @Getter
 @Setter
 @Builder
