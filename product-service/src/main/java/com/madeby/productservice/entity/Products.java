@@ -42,7 +42,7 @@ public class Products extends Timestamped{
     @Builder.Default
     private boolean isVisible = true;
 
-    @OneToMany(mappedBy = "products", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "products", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference // 자식 참조
     @Builder.Default
     private List<ProductInfo> productInfos = new ArrayList<>();
