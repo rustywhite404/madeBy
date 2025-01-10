@@ -47,5 +47,11 @@ public interface ProductsRepository extends JpaRepository<Products, Long> {
                                                         @Param("cursor") Long cursor,
                                                         Pageable pageable);
 
+    @Query("SELECT new com.madeby.productservice.dto.ProductsWithoutInfoDto(p.id, p.name, p.image, p.description, p.category) " +
+            "FROM Products p " +
+            "WHERE p.isVisible = true AND p.id < :cursor " +
+            "ORDER BY p.id DESC")
+    List<ProductsWithoutInfoDto> findByIdLessThanWithoutProductInfos(@Param("cursor") Long cursor, Pageable pageable);
+
 }
 

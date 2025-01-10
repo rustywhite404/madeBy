@@ -52,7 +52,8 @@ public enum MadeByErrorCode {
     REDIS_ROCK_ERROR("레디스 락 처리 중 문제가 발생했습니다."),
     CONCURRENCY_LOCK_FAILED("락 획득 중 문제가 발생했습니다."),
     RESOURCE_LOCK_FAILURE("리소스 잠금에 실패했습니다."),
-    SERVICE_UNAVAILABLE("서비스 장애가 발생했습니다. 나중에 다시 시도해주세요.");
+    SERVICE_UNAVAILABLE("서비스 장애가 발생했습니다. 나중에 다시 시도해주세요."),
+    NO_CACHE("캐시가 존재하지 않습니다.");
 
 
 

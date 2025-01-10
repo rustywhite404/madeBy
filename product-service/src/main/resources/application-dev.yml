@@ -6,6 +6,14 @@ server:
     connection-timeout: 20000 # 연결 타임아웃(ms)
     max-connections: 900
 
+  cache:
+    type: caffeine
+    cache-names:
+      - productSearch
+      - products
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=10m
+
 spring:
   cloud:
     loadbalancer:
@@ -22,6 +30,7 @@ spring:
     username: root
     password: 1234 # MySQL root 비밀번호
   jpa:
+    show-sql: true
     hibernate:
       ddl-auto: update
 
