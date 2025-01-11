@@ -2,6 +2,7 @@ package com.madeby.orderservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RFuture;
 import org.redisson.api.RLock;
 import org.redisson.api.RScript;
 import org.redisson.api.RedissonClient;
@@ -28,32 +29,34 @@ public class StockReservationService {
     private boolean decrementStockWithLua(Long productInfoId, int quantity) {
         // Lua 스크립트 실행 로직
         String stockKey = "product_stock:" + productInfoId;
-        String luaScript = """
+        RFuture<Long> resultFuture = redissonClient.getScript().evalAsync(
+                RScript.Mode.READ_WRITE,
+                """
                     local stockKey = KEYS[1]
                     local quantity = tonumber(ARGV[1])
-                    local currentStock = tonumber(redis.call('GET', stockKey))
-                    if currentStock == nil or currentStock < quantity then
+                    local currentStock = redis.call('GET', stockKey)
+                    if not currentStock or tonumber(currentStock) < quantity then
                         return -1
                     end
-                    local newStock = redis.call('DECRBY', stockKey, quantity) -- 재고 감소 후 남은 재고
-                                        return newStock -- 남은 재고 반환
-                """;
-
-        Object result = redissonClient.getScript().eval(
-                RScript.Mode.READ_WRITE,
-                luaScript,
+                    return redis.call('DECRBY', stockKey, quantity)
+                """,
                 RScript.ReturnType.INTEGER,
                 Collections.singletonList(stockKey),
                 quantity
         );
 
-        if ((Long) result == -1) {
-            log.info("재고 부족: productInfoId = {}, 요청 수량 = {}", productInfoId, quantity);
+        try {
+            Long result = resultFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
+            if (result == -1) {
+                log.info("재고 부족: productInfoId = {}, 요청 수량 = {}", productInfoId, quantity);
+                return false;
+            }
+            log.info("[재고 감소 완료] 남은 재고 : {}", result);
+            return true;
+        } catch (Exception e) {
+            log.error("Redis Lua 스크립트 실행 중 오류 발생", e);
             return false;
         }
-
-        log.info("[재고 감소 완료] 남은 재고 : {}", result);
-        return true;
     }
 
     /**
