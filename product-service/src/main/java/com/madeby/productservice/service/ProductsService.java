@@ -45,6 +45,44 @@ public class ProductsService {
     private final CacheManager cacheManager;
 
     @Transactional
+    public ProductInfoDto createLimitedProductInfo(Long productId, ProductInfoDto productInfoDto) {
+        // 1. 상품 존재 여부 확인
+        Products product = productsRepository.findById(productId)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
+
+        // 2. 기존 옵션과 중복 여부 확인
+        boolean isDuplicateOption = productInfoRepository.existsByProductsAndColorAndSize(
+                product, productInfoDto.getColor(), productInfoDto.getSize()
+        );
+
+        if (isDuplicateOption) {
+            throw new MadeByException(MadeByErrorCode.DUPLICATE_OPTION,MadeByErrorCode.DUPLICATE_OPTION.getMessage());
+        }
+
+        // 3. 새로운 옵션 생성
+        ProductInfo productInfo = ProductInfo.builder()
+                .products(product)
+                .price(productInfoDto.getPrice())
+                .stock(productInfoDto.getStock())
+                .size(productInfoDto.getSize())
+                .color(productInfoDto.getColor())
+                .isLimited(true)  // 항상 true로 설정
+                .isVisible(false)  // 기본적으로 false로 설정
+                .build();
+
+        // 4. 저장
+        productInfo = productInfoRepository.save(productInfo);
+
+        // 5. Redis에 저장
+        ProductInfoDto savedDto = ProductInfoDto.fromEntity(productInfo);
+        String redisKey = "product_info:" + productInfo.getId();
+        redissonClient.getBucket(redisKey).set(savedDto);
+
+        return savedDto;
+    }
+
+
+    @Transactional
     public void updateLimitedProductsVisibility() {
         // 한정 상품들 중 isVisible=false인 상품들을 가져옴
         List<ProductInfo> limitedProducts = productInfoRepository.findByIsLimitedTrueAndIsVisibleFalse();

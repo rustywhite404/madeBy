@@ -18,7 +18,7 @@ public class CacheConfig {
     public Caffeine caffeineConfig() {
         return Caffeine.newBuilder()
                 .expireAfterWrite(60, TimeUnit.MINUTES)  // 60분 후 캐시 만료
-                .maximumSize(1000)                       // 최대 1000개 항목까지 캐시
+                .maximumSize(3000)                       // 최대 3000개 항목까지 캐시
                 .recordStats();                          // 캐시 통계 기록
     }
 

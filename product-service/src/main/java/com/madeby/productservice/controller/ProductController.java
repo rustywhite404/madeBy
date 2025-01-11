@@ -34,6 +34,15 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success(registeredProduct));
     }
 
+    @PostMapping("/products/{productId}/limitedOptionRegister")
+    public ResponseEntity<ApiResponse<ProductInfoDto>> createProductInfo(
+            @PathVariable Long productId,
+            @RequestBody ProductInfoDto productInfoDto) {
+        ProductInfoDto createdInfo = productsService.createLimitedProductInfo(productId, productInfoDto);
+        return ResponseEntity.ok(ApiResponse.success(createdInfo));
+    }
+
+
     //재고 업데이트
     @PostMapping("/products/{productInfoId}/update-stock")
     public ResponseEntity<Boolean> updateStock(
