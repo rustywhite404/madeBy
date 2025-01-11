@@ -1,5 +1,6 @@
 package com.madeby.productservice.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.madeBy.shared.common.ApiResponse;
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
@@ -37,7 +38,7 @@ public class ProductController {
     @PostMapping("/products/{productId}/limitedOptionRegister")
     public ResponseEntity<ApiResponse<ProductInfoDto>> createProductInfo(
             @PathVariable Long productId,
-            @RequestBody ProductInfoDto productInfoDto) {
+            @RequestBody ProductInfoDto productInfoDto) throws JsonProcessingException {
         ProductInfoDto createdInfo = productsService.createLimitedProductInfo(productId, productInfoDto);
         return ResponseEntity.ok(ApiResponse.success(createdInfo));
     }

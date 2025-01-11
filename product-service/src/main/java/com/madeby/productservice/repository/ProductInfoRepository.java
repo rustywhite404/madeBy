@@ -17,4 +17,6 @@ public interface ProductInfoRepository extends JpaRepository<ProductInfo, Long> 
     List<ProductInfo> findByIsLimitedTrueAndIsVisibleFalse();
 
     boolean existsByProductsAndColorAndSize(Products product, String color, String size);
+
+    List<ProductInfo> findByIsLimitedTrue();
 }

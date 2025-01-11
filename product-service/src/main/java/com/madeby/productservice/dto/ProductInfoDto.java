@@ -1,5 +1,6 @@
 package com.madeby.productservice.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.madeby.productservice.entity.ProductInfo;
 import lombok.*;
 
@@ -10,6 +11,7 @@ import java.math.BigDecimal;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ProductInfoDto {
     private Long id;
     private BigDecimal price;

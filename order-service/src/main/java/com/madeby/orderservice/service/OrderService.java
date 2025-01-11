@@ -1,5 +1,6 @@
 package com.madeby.orderservice.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
 import com.madeby.orderservice.client.CartServiceClient;
@@ -11,6 +12,7 @@ import com.madeby.orderservice.repository.OrderRepository;
 import com.madeby.orderservice.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -32,6 +35,8 @@ public class OrderService {
     private final StockReservationService stockReservationService;
     private final ProductServiceClient productServiceClient;
     private final PaymentRepository paymentRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
 
     @Transactional
@@ -206,9 +211,26 @@ public class OrderService {
     public PaymentStatus placeOrder(Long userId, Long productInfoId, int quantity) {
 
         // 1. 상품 정보 가져오기 (Feign Client 사용)
-        ProductInfoDto productInfoDto = productServiceClient.getProductInfo(productInfoId);
+        String redisKey = "product_info:" + productInfoId;
+        ProductInfoDto productInfoDto = null;
+
+        try {
+            String jsonStr = (String) redisTemplate.opsForValue().get(redisKey);
+            if (jsonStr != null) {
+                productInfoDto = objectMapper.readValue(jsonStr, ProductInfoDto.class);
+            }
+        } catch (Exception e) {
+            log.error("Redis 데이터 변환 중 오류 발생: {}", e.getMessage());
+            log.debug("상세 에러: ", e);
+        }
+
+        // Redis에서 조회 실패시 Feign Client 사용
         if (productInfoDto == null) {
-            throw new MadeByException(MadeByErrorCode.NO_PRODUCT);
+            productInfoDto = productServiceClient.getProductInfo(productInfoId);
+            if (productInfoDto == null) {
+                throw new MadeByException(MadeByErrorCode.NO_PRODUCT);
+            }
+            log.info("상품 정보를 Feign Client에서 조회 성공: productInfoId = {}", productInfoId);
         }
 
         // 2. 판매중인 상품인지 확인
@@ -220,7 +242,6 @@ public class OrderService {
         if (!stockReservationService.reserveStock(productInfoId, quantity)) {
             throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT);
         }
-        log.info("재고 예약 성공: productInfoId = {}, quantity = {}", productInfoId, quantity);
 
         // 4. 주문 생성 및 저장
         Orders order = Orders.builder()
@@ -233,7 +254,7 @@ public class OrderService {
         // 4-1. 주문 상품 스냅샷 생성
         OrderProductSnapshot snapshot = OrderProductSnapshot.builder()
                 .orders(order)
-                .productInfoId(productInfoDto.getId())
+                .productInfoId(productInfoId)
                 .stock(productInfoDto.getStock()) // ProductInfoDto에서 재고 가져오기
                 .size(productInfoDto.getSize()) // ProductsDto에서 사이즈 가져오기
                 .color(productInfoDto.getColor()) // ProductsDto에서 색상 가져오기
@@ -251,7 +272,6 @@ public class OrderService {
 
         // 7. 결제 결과 처리
         if (result == PaymentStatus.COMPLETED) {
-            log.info("결제 성공: 주문 ID = {}", order.getId());
             // DB에 최종 재고 반영
             boolean decrementSuccess = productServiceClient.decrementStock(productInfoId, quantity);
             if (!decrementSuccess) {
@@ -259,8 +279,6 @@ public class OrderService {
                 throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT, "재고가 부족합니다");
             }
         } else {
-            log.info("결제 실패 또는 이탈: 주문 ID = {}", order.getId());
-            // Redis에 재고 복구
             stockReservationService.cancelReservation(productInfoId, quantity);
         }
         return result;

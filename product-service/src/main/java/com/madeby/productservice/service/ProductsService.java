@@ -1,5 +1,7 @@
 package com.madeby.productservice.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
 import com.madeby.productservice.dto.ProductInfoDto;
@@ -20,6 +22,7 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.domain.*;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,9 +46,11 @@ public class ProductsService {
     private final ProductInfoRepository productInfoRepository;
     private final RedissonClient redissonClient;
     private final CacheManager cacheManager;
+    private final ObjectMapper objectMapper;
+    private final RedisTemplate redisTemplate;
 
     @Transactional
-    public ProductInfoDto createLimitedProductInfo(Long productId, ProductInfoDto productInfoDto) {
+    public ProductInfoDto createLimitedProductInfo(Long productId, ProductInfoDto productInfoDto) throws JsonProcessingException {
         // 1. 상품 존재 여부 확인
         Products product = productsRepository.findById(productId)
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
@@ -76,7 +81,8 @@ public class ProductsService {
         // 5. Redis에 저장
         ProductInfoDto savedDto = ProductInfoDto.fromEntity(productInfo);
         String redisKey = "product_info:" + productInfo.getId();
-        redissonClient.getBucket(redisKey).set(savedDto);
+        redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(productInfoDto));
+
 
         return savedDto;
     }
@@ -84,21 +90,35 @@ public class ProductsService {
 
     @Transactional
     public void updateLimitedProductsVisibility() {
-        // 한정 상품들 중 isVisible=false인 상품들을 가져옴
-        List<ProductInfo> limitedProducts = productInfoRepository.findByIsLimitedTrueAndIsVisibleFalse();
+        List<ProductInfo> limitedProducts = productInfoRepository.findByIsLimitedTrue();
+        for (ProductInfo productInfo : limitedProducts) {
+            // DB 업데이트
+            productInfo.setVisible(true);
+            productInfoRepository.save(productInfo);
 
-        if (limitedProducts.isEmpty()) {
-            // 변경 대상이 없을 경우 로그만 출력하고 종료
-            System.out.println("업데이트할 한정 상품이 없습니다.");
-            return;
+            // Redis 업데이트
+            String redisKey = "product_info:" + productInfo.getId();
+            try {
+                // 기존 Redis 데이터 가져오기
+                String jsonStr = (String) redisTemplate.opsForValue().get(redisKey);
+                if (jsonStr != null) {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    Map<String, Object> productMap = objectMapper.readValue(jsonStr, Map.class);
+
+                    // isVisible 값을 true로 업데이트
+                    productMap.put("isVisible", true);
+                    productMap.put("visible", true);
+
+                    // 수정된 데이터를 다시 Redis에 저장
+                    redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(productMap));
+                    log.info("Redis 상품 정보 업데이트 성공: productInfoId = {}", productInfo.getId());
+                }
+            } catch (Exception e) {
+                log.error("Redis 상품 정보 업데이트 실패: productInfoId = {}, error = {}",
+                        productInfo.getId(), e.getMessage());
+            }
         }
-
-        for (ProductInfo product : limitedProducts) {
-            product.setVisible(true); // isVisible을 true로 변경
-        }
-
-        // 변경된 상품들 저장
-        productInfoRepository.saveAll(limitedProducts);
+        log.info("한정판 상품 업데이트 완료: 총 {}개 상품", limitedProducts.size());
     }
 
     @Transactional
