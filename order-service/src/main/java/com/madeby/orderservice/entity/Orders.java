@@ -49,9 +49,10 @@ public class Orders extends Timestamped {
     @Comment(value = "반품 가능 여부")
     private boolean isReturnable;
 
-    // 연관된 OrderProductSnapshot 엔티티 추가 메서드
-    public void addOrderProductSnapshot(OrderProductSnapshot snapshot) {
-        snapshot.setOrders(this);
-        this.orderProductSnapshots.add(snapshot);
+    public Orders(Long userId, OrderStatus status, boolean isReturnable) {
+        this.userId = userId;
+        this.status = status;
+        this.isReturnable = isReturnable;
+        this.orderProductSnapshots = new ArrayList<>(); // 컬렉션 초기화
     }
 }

@@ -38,6 +38,9 @@ public class OrderService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    // Redis 키를 상수로 분리
+    private static final String PRODUCT_INFO_REDIS_KEY_PREFIX = "product_info:";
+
 
     @Transactional
     public void requestReturn(Long orderId, Long userId) {
@@ -211,17 +214,16 @@ public class OrderService {
     public PaymentStatus placeOrder(Long userId, Long productInfoId, int quantity) {
 
         // 1. 상품 정보 가져오기 (Feign Client 사용)
-        String redisKey = "product_info:" + productInfoId;
+        StringBuilder keyBuilder = new StringBuilder(PRODUCT_INFO_REDIS_KEY_PREFIX);
+        keyBuilder.append(productInfoId);
         ProductInfoDto productInfoDto = null;
-
-        try {
-            String jsonStr = (String) redisTemplate.opsForValue().get(redisKey);
-            if (jsonStr != null) {
-                productInfoDto = objectMapper.readValue(jsonStr, ProductInfoDto.class);
+        Object cachedValue = redisTemplate.opsForValue().get(keyBuilder.toString());
+        if (cachedValue instanceof String) {
+            try {
+                productInfoDto = objectMapper.readValue((String) cachedValue, ProductInfoDto.class);
+            } catch (Exception e) {
+                log.error("Redis 데이터 변환 실패: productInfoId={}", productInfoId);
             }
-        } catch (Exception e) {
-            log.error("Redis 데이터 변환 중 오류 발생: {}", e.getMessage());
-            log.debug("상세 에러: ", e);
         }
 
         // Redis에서 조회 실패시 Feign Client 사용
@@ -244,25 +246,20 @@ public class OrderService {
         }
 
         // 4. 주문 생성 및 저장
-        Orders order = Orders.builder()
-                .userId(userId)
-                .status(OrderStatus.ORDERED)
-                .isReturnable(true) // 기본값으로 설정
-                .build();
+        Orders order = new Orders(userId, OrderStatus.ORDERED, true);
         orderRepository.save(order);
 
         // 4-1. 주문 상품 스냅샷 생성
-        OrderProductSnapshot snapshot = OrderProductSnapshot.builder()
-                .orders(order)
-                .productInfoId(productInfoId)
-                .stock(productInfoDto.getStock()) // ProductInfoDto에서 재고 가져오기
-                .size(productInfoDto.getSize()) // ProductsDto에서 사이즈 가져오기
-                .color(productInfoDto.getColor()) // ProductsDto에서 색상 가져오기
-                .quantity(quantity) // 요청된 수량
-                .price(productInfoDto.getPrice()) // ProductInfoDto에서 가격 가져오기
-                .totalAmount(productInfoDto.getPrice().multiply(BigDecimal.valueOf(quantity))) // 총 금액 계산
-                .build();
-        snapshotRepository.save(snapshot);
+        OrderProductSnapshot snapshot = new OrderProductSnapshot(
+                order,
+                productInfoId,
+                productInfoDto.getStock(),
+                productInfoDto.getSize(),
+                productInfoDto.getColor(),
+                quantity,
+                productInfoDto.getPrice(),
+                productInfoDto.getPrice().multiply(BigDecimal.valueOf(quantity))
+        );
 
         // 5. 결제 화면 진입 처리
         initiatePayment(order.getId(), userId);
@@ -334,8 +331,6 @@ public class OrderService {
                         .build());
 
         paymentRepository.save(payment);
-
-        log.info("결제 화면으로 진입: 주문 ID = {}, 결제 상태 = {}", orderId, payment.getStatus());
     }
 
     @Transactional
@@ -346,7 +341,6 @@ public class OrderService {
 
          //2. 고객 이탈율 시뮬레이션 (20% 확률로 결제 시도 중단)
         if (Math.random() < 0.2) {
-            log.info("고객 이탈: 결제 시도 중단 (주문 ID: {})", orderId);
             payment.setStatus(PaymentStatus.CANCELED);
             return PaymentStatus.CANCELED;
         }
@@ -357,7 +351,6 @@ public class OrderService {
 
         // 4. 결제 완료 시뮬레이션 (20% 확률로 결제 실패)
         if (Math.random() < 0.2) {
-            log.info("결제 실패: 고객 사유 (주문 ID: {})", orderId);
             payment.setStatus(PaymentStatus.FAILED);
             return PaymentStatus.FAILED;
         }
@@ -366,8 +359,6 @@ public class OrderService {
         payment.setStatus(PaymentStatus.COMPLETED);
         payment.setCompletedAt(LocalDateTime.now());
         paymentRepository.save(payment);
-
-        log.info("결제 완료: 주문 ID = {}, 결제 상태 = {}", orderId, payment.getStatus());
         return PaymentStatus.COMPLETED;
     }
 

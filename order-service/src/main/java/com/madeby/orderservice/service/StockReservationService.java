@@ -48,10 +48,8 @@ public class StockReservationService {
         try {
             Long result = resultFuture.toCompletableFuture().get(1, TimeUnit.SECONDS);
             if (result == -1) {
-                log.info("재고 부족: productInfoId = {}, 요청 수량 = {}", productInfoId, quantity);
                 return false;
             }
-            log.info("[재고 감소 완료] 남은 재고 : {}", result);
             return true;
         } catch (Exception e) {
             log.error("Redis Lua 스크립트 실행 중 오류 발생", e);
@@ -79,6 +77,5 @@ public class StockReservationService {
                 Collections.singletonList(redisKey),
                 quantity
         );
-        log.info("재고 복구 완료: productInfoId = {}, quantity = {}", productInfoId, quantity);
     }
 }

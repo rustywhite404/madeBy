@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.Comment;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(indexes = {
@@ -48,6 +49,25 @@ public class OrderProductSnapshot {
     @Column(nullable = false, precision = 10, scale = 2)
     @Comment(value = "상품 총액 (수량 * 가격)")
     private BigDecimal totalAmount;
+
+    public OrderProductSnapshot(
+            Orders orders,
+            Long productInfoId,
+            int stock,
+            String size,
+            String color,
+            int quantity,
+            BigDecimal price,
+            BigDecimal totalAmount) {
+        this.orders = orders;
+        this.productInfoId = productInfoId;
+        this.stock = stock;
+        this.size = size;
+        this.color = color;
+        this.quantity = quantity;
+        this.price = price;
+        this.totalAmount = totalAmount;
+    }
 
     @PrePersist //totalAmount 자동계산
     public void calculateTotalAmount() {
