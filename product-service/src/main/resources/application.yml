@@ -7,6 +7,11 @@ spring:
       maximum-pool-size: 450       # MySQL max_connections 제한의 90%
       minimum-idle: 50            # 최소 유휴 커넥션 수
       connection-timeout: 3000    # 커넥션 대기 타임아웃 (ms)
+  data:
+    elasticsearch:
+      repositories:
+        enabled: true  # Elasticsearch Repository 활성화
+      auto-create-index: false # 자동 인덱스 생성 비활성화
 
 server:
   tomcat:

@@ -36,12 +36,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public Mono<ResponseEntity<ApiResponse<?>>> handleException(Exception ex, ServerHttpRequest request) {
-        log.error("예상치 못한 에러 발생 - url: {}, message: {}", request.getURI(), ex.getMessage());
-
-        return Mono.just(ResponseEntity
-                .badRequest()
-                .body(ApiResponse.failure(MadeByErrorCode.INTERNAL_SERVER_ERROR.name(), ex.getMessage())));
+    public ResponseEntity<ApiResponse<?>> handleException(Exception e) {
+        log.error("Unexpected error occurred: ", e);
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.failure(MadeByErrorCode.INTERNAL_SERVER_ERROR.name(),MadeByErrorCode.INTERNAL_SERVER_ERROR.getMessage()));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

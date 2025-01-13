@@ -29,7 +29,7 @@ public class ProductController {
 
     private final ProductsService productsService;
 
-    @PostMapping("/register")
+    @PostMapping("/products/register")
     public ResponseEntity<ApiResponse<Products>> registerProduct(@RequestBody ProductsDto productsDto) {
         Products registeredProduct = productsService.registerNewProduct(productsDto);
         return ResponseEntity.ok(ApiResponse.success(registeredProduct));

@@ -7,8 +7,11 @@ import com.madeBy.shared.exception.MadeByException;
 import com.madeby.productservice.dto.ProductInfoDto;
 import com.madeby.productservice.dto.ProductsDto;
 import com.madeby.productservice.dto.ProductsWithoutInfoDto;
+import com.madeby.productservice.entity.ProductDocument;
 import com.madeby.productservice.entity.ProductInfo;
+import com.madeby.productservice.entity.ProductInfoDocument;
 import com.madeby.productservice.entity.Products;
+import com.madeby.productservice.elasticsearch.ProductElasticsearchRepository;
 import com.madeby.productservice.repository.ProductInfoRepository;
 import com.madeby.productservice.repository.ProductsRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,19 +23,14 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.domain.*;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,6 +46,7 @@ public class ProductsService {
     private final CacheManager cacheManager;
     private final ObjectMapper objectMapper;
     private final RedisTemplate redisTemplate;
+    private final ProductElasticsearchRepository productElasticsearchRepository;
 
     @Transactional
     public ProductInfoDto createLimitedProductInfo(Long productId, ProductInfoDto productInfoDto) throws JsonProcessingException {
@@ -150,12 +149,40 @@ public class ProductsService {
 
             product.getProductInfos().add(info);
 
-            // Redis에 초기 재고 등록
+            // 4. Redis에 초기 재고 등록
             String redisKey = "product_stock:" + info.getId();
             redissonClient.getBucket(redisKey).set(info.getStock());
         }
+        Products savedProduct = productsRepository.save(product);
 
-        return productsRepository.save(product);
+        // Elasticsearch용 문서로 변환 후 저장
+        ProductDocument productDocument = convertToDocument(savedProduct);
+        ProductDocument savedDocument = productElasticsearchRepository.save(productDocument);
+        log.info("Elasticsearch에 저장된 상품: {}", savedDocument);
+
+        return savedProduct;
+    }
+
+    private ProductDocument convertToDocument(Products product) {
+        return ProductDocument.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .category(product.getCategory())
+                .description(product.getDescription())
+                .image(product.getImage())
+                .isVisible(true)
+                .productInfos(product.getProductInfos().stream()
+                        .map(info -> ProductInfoDocument.builder()
+                                .id(info.getId())
+                                .price(info.getPrice())
+                                .stock(info.getStock())
+                                .size(info.getSize())
+                                .color(info.getColor())
+                                .isLimited(info.isLimited())
+                                .isVisible(info.isVisible())
+                                .build())
+                        .toList())
+                .build();
     }
 
     @Cacheable(
@@ -285,10 +312,36 @@ public class ProductsService {
     public Slice<ProductsWithoutInfoDto> searchProductsByName(String name, Long cursor, int size) {
         Pageable pageable = PageRequest.of(0, size); // 한 페이지 크기 지정
 
-        // 연관 데이터 없이 ProductsWithoutInfoDto로 데이터 조회
-        List<ProductsWithoutInfoDto> products = productsRepository.searchByNameWithCursor(name.trim(), cursor, pageable);
+        try {
+            // 1. Elasticsearch에서 먼저 검색
+            Page<ProductDocument> searchResults = productElasticsearchRepository
+                    .findByNameContainingIgnoreCase(name.trim(), pageable);
 
-        // 다음 커서 계산
+            log.info("Elasticsearch search results: {}", searchResults.getContent());  // 로그 추가
+
+            if (!searchResults.isEmpty()) {
+                // Elasticsearch 결과를 ProductsWithoutInfoDto로 변환
+                List<ProductsWithoutInfoDto> productsInfo = searchResults.getContent().stream()
+                        .map(product -> new ProductsWithoutInfoDto(
+                                product.getId(),
+                                product.getName(),
+                                product.getImage(),
+                                product.getDescription(),
+                                product.getCategory()
+                        ))
+                        .toList();
+
+                return new SliceImpl<>(productsInfo, pageable, searchResults.hasNext());
+            }
+        } catch (Exception e) {
+            log.error("Elasticsearch search failed: ", e);  // 에러 로그 추가
+        }
+
+        // 2. Elasticsearch에서 결과가 없거나 에러 발생 시 DB 검색으로 폴백
+        log.info("No results found in Elasticsearch, falling back to database search");
+        List<ProductsWithoutInfoDto> products = productsRepository
+                .searchByNameWithCursor(name.trim(), cursor, pageable);
+
         Long nextCursor = products.isEmpty() ? null : products.get(products.size() - 1).getId();
 
         return new SliceImpl<>(products, pageable, nextCursor != null);

@@ -141,9 +141,26 @@ services:
     networks:
       - app-network
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.0
+    container_name: elasticsearch
+    environment:
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false #HTTP를 허용하도록 설정(개발 환경)
+      - discovery.type=single-node # 단일 노드 설정
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m # JVM 메모리 설정
+    ports:
+      - "9200:9200" # REST API 포트
+      - "9300:9300" # 클러스터 통신 포트
+    volumes:
+      - es_data:/usr/share/elasticsearch/data # 데이터 영속성
+    networks:
+      - app-network
+
 volumes:
   madeby-db-data:
   redis-data:
+  es_data:
 
 networks:
   app-network:
