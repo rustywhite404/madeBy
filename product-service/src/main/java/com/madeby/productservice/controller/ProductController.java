@@ -131,6 +131,21 @@ public class ProductController {
         }
     }
 
+    @DeleteMapping("/products/{productId}")
+    public ResponseEntity<String> deleteProduct(@PathVariable Long productId) {
+        try {
+            // 서비스 레이어에서 삭제 처리
+            productsService.deleteProduct(productId);
+            // 성공 응답 반환
+            return ResponseEntity.ok("상품이 성공적으로 삭제되었습니다.");
+        } catch (MadeByException e) {
+            // 상품이 존재하지 않을 경우 예외 처리처리
+            throw new MadeByException(MadeByErrorCode.NO_PRODUCT);
+        } catch (Exception e) {
+            // 기타 예외 처리
+            return ResponseEntity.status(500).body("상품 삭제 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
 
     // 슬라이스 응답을 위한 DTO
     @Getter

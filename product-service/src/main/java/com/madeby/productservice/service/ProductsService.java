@@ -337,7 +337,7 @@ public class ProductsService {
             log.error("Elasticsearch search failed: ", e);  // 에러 로그 추가
         }
 
-        // 2. Elasticsearch에서 결과가 없거나 에러 발생 시 DB 검색으로 폴백
+        // 2. Elasticsearch에서 결과가 없거나 에러 발생 시 Caffeine 캐시 사용, 캐시에도 없을 경우 DB 검색으로 폴백
         log.info("No results found in Elasticsearch, falling back to database search");
         List<ProductsWithoutInfoDto> products = productsRepository
                 .searchByNameWithCursor(name.trim(), cursor, pageable);
@@ -386,8 +386,29 @@ public class ProductsService {
         // 저장 및 캐시 갱신
         Products updatedProduct = productsRepository.save(product);
 
+        // Elasticsearch에 데이터 동기화
+        try {
+            ProductDocument productDocument = convertToProductDocument(updatedProduct); // DTO → Elasticsearch 문서 변환
+            productElasticsearchRepository.save(productDocument);
+            log.info("Elasticsearch 동기화 성공: {}", productDocument);
+        } catch (Exception e) {
+            log.error("Elasticsearch 동기화 실패", e);
+            // 실패 처리 로직 (예: 별도 큐에 저장하여 재처리)
+        }
+
         // DTO로 변환하여 반환
         return convertToProductsDto(updatedProduct);
+    }
+
+    private ProductDocument convertToProductDocument(Products product) {
+        return ProductDocument.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .category(product.getCategory())
+                .image(product.getImage())
+                .description(product.getDescription())
+                .isVisible(product.isVisible())
+                .build();
     }
 
     @Transactional
@@ -397,8 +418,9 @@ public class ProductsService {
         Products product = productsRepository.findById(productId)
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PRODUCT));
 
-        // DB에서 삭제
+        // DB, Elastic Search에서 삭제
         productsRepository.delete(product);
+        productElasticsearchRepository.deleteById(productId);
     }
 
 }
