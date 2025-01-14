@@ -105,8 +105,8 @@ public class ProductController {
             @RequestParam(defaultValue = "20") Integer size) {
 
         try {
-            // cursor가 null일 경우 기본값 60000 설정(임시)
-            Long adjustedCursor = cursor == null ? 60000L : cursor;
+            // cursor가 null일 경우 기본값 8000 설정(임시)
+            Long adjustedCursor = cursor == null ? 8000L : cursor;
 
             Slice<ProductsWithoutInfoDto> results = productsService.searchProductsByName(name, cursor, size);
 

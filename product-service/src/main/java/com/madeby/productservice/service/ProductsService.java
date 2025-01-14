@@ -158,7 +158,6 @@ public class ProductsService {
         // Elasticsearch용 문서로 변환 후 저장
         ProductDocument productDocument = convertToDocument(savedProduct);
         ProductDocument savedDocument = productElasticsearchRepository.save(productDocument);
-        log.info("Elasticsearch에 저장된 상품: {}", savedDocument);
 
         return savedProduct;
     }
@@ -313,11 +312,10 @@ public class ProductsService {
         Pageable pageable = PageRequest.of(0, size); // 한 페이지 크기 지정
 
         try {
+            log.info("Elasticsearch query: name={}, from={}, size={}", name, cursor, size);
             // 1. Elasticsearch에서 먼저 검색
             Page<ProductDocument> searchResults = productElasticsearchRepository
                     .findByNameContainingIgnoreCase(name.trim(), pageable);
-
-            log.info("Elasticsearch search results: {}", searchResults.getContent());  // 로그 추가
 
             if (!searchResults.isEmpty()) {
                 // Elasticsearch 결과를 ProductsWithoutInfoDto로 변환
