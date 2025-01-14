@@ -1,15 +1,15 @@
 package com.madeby.orderservice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.madeBy.shared.entity.PaymentStatus;
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
 import com.madeby.orderservice.client.CartServiceClient;
 import com.madeby.orderservice.client.ProductServiceClient;
 import com.madeby.orderservice.dto.*;
 import com.madeby.orderservice.entity.*;
-import com.madeby.orderservice.repository.OrderProductSnapshotRepository;
 import com.madeby.orderservice.repository.OrderRepository;
-import com.madeby.orderservice.repository.PaymentRepository;
+import com.madeby.orderservice.client.PayServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,25 +22,22 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
 @Service
 @Slf4j
 @RequiredArgsConstructor
+
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final OrderProductSnapshotRepository snapshotRepository;
     private final CartServiceClient cartServiceClient;
     private final StockReservationService stockReservationService;
     private final ProductServiceClient productServiceClient;
-    private final PaymentRepository paymentRepository;
+    private final PayServiceClient payServiceClient;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Redis 키를 상수로 분리
     private static final String PRODUCT_INFO_REDIS_KEY_PREFIX = "product_info:";
-
 
     @Transactional
     public void requestReturn(Long orderId, Long userId) {
@@ -185,7 +182,7 @@ public class OrderService {
         initiatePayment(order.getId(), userId);
 
         // 5. 결제 시도 (모의 결제)
-        PaymentStatus result = processPayment(order.getId(), userId);
+        PaymentStatus result = payServiceClient.processPayment(order.getId(), userId);
 
         // 6. 결제 결과 처리
         if (result == PaymentStatus.COMPLETED) {
@@ -213,7 +210,6 @@ public class OrderService {
     @Transactional
     public PaymentStatus placeOrder(Long userId, Long productInfoId, int quantity) {
 
-        // 1. 상품 정보 가져오기 (Feign Client 사용)
         StringBuilder keyBuilder = new StringBuilder(PRODUCT_INFO_REDIS_KEY_PREFIX);
         keyBuilder.append(productInfoId);
         ProductInfoDto productInfoDto = null;
@@ -245,11 +241,8 @@ public class OrderService {
             throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT);
         }
 
-        // 4. 주문 생성 및 저장
+        // 4. 주문, 스냅샷 생성 및 저장
         Orders order = new Orders(userId, OrderStatus.ORDERED, true);
-        orderRepository.save(order);
-
-        // 4-1. 주문 상품 스냅샷 생성
         OrderProductSnapshot snapshot = new OrderProductSnapshot(
                 order,
                 productInfoId,
@@ -261,11 +254,15 @@ public class OrderService {
                 productInfoDto.getPrice().multiply(BigDecimal.valueOf(quantity))
         );
 
+        order.getOrderProductSnapshots().add(snapshot);
+        orderRepository.save(order);
+
+
         // 5. 결제 화면 진입 처리
         initiatePayment(order.getId(), userId);
 
         // 6. 결제 시도 (모의 결제)
-        PaymentStatus result = processPayment(order.getId(), userId);
+        PaymentStatus result = payServiceClient.processPayment(order.getId(), userId);
 
         // 7. 결제 결과 처리
         if (result == PaymentStatus.COMPLETED) {
@@ -323,43 +320,13 @@ public class OrderService {
             throw new MadeByException(MadeByErrorCode.NOT_YOUR_ORDER);
         }
 
-        // 3. 결제 상태 확인
-        Payment payment = paymentRepository.findByOrderId(orderId)
-                .orElseGet(() -> Payment.builder()
-                        .orderId(orderId)
-                        .status(PaymentStatus.PENDING) // '결제시도' 상태
-                        .build());
-
-        paymentRepository.save(payment);
+        // 3. 결제 상태 초기화
+        payServiceClient.initiatePayment(orderId, userId);
     }
 
-    @Transactional
-    public PaymentStatus processPayment(Long orderId, Long userId) {
-        // 1. 결제 데이터 조회
-        Payment payment = paymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_PAYMENT));
 
-         //2. 고객 이탈율 시뮬레이션 (20% 확률로 결제 시도 중단)
-        if (Math.random() < 0.2) {
-            payment.setStatus(PaymentStatus.CANCELED);
-            return PaymentStatus.CANCELED;
-        }
-
-        // 3. 결제 상태 변경 ('결제중')
-        payment.setStatus(PaymentStatus.PROCESSING);
-        paymentRepository.save(payment);
-
-        // 4. 결제 완료 시뮬레이션 (20% 확률로 결제 실패)
-        if (Math.random() < 0.2) {
-            payment.setStatus(PaymentStatus.FAILED);
-            return PaymentStatus.FAILED;
-        }
-
-        // 5. 결제 성공
-        payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setCompletedAt(LocalDateTime.now());
-        paymentRepository.save(payment);
-        return PaymentStatus.COMPLETED;
+    public Orders getOrderById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_ORDER));
     }
-
 }

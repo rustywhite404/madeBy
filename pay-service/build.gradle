@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('springCloudVersion', "2024.0.0")
+}
+
+dependencies {
+    implementation project(':shared') // 공통 모듈 참조
+    implementation 'org.redisson:redisson-spring-boot-starter:3.21.1'
+}
+
+tasks.withType(Test) {
+    useJUnitPlatform() // JUnit 5 플랫폼 사용 설정
+}

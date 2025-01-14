@@ -1,15 +1,11 @@
 package com.madeby.orderservice.service;
 
-import com.madeby.orderservice.client.CartServiceClient;
-import com.madeby.orderservice.client.ProductServiceClient;
 import com.madeby.orderservice.dto.OrderRequestDto;
 import com.madeby.orderservice.repository.OrderProductSnapshotRepository;
 import com.madeby.orderservice.repository.OrderRepository;
-import com.madeby.orderservice.repository.PaymentRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,15 +22,6 @@ public class ConcurrencyTest {
     @Autowired
     private RedissonClient redissonClient;
 
-    @Autowired
-    private OrderRepository orderRepository;
-
-    @Autowired
-    private OrderProductSnapshotRepository snapshotRepository;
-
-    @Autowired
-    private PaymentRepository paymentRepository;
-
     private static final Long PRODUCT_INFO_ID = 4L;
 
     @BeforeEach
@@ -42,10 +29,6 @@ public class ConcurrencyTest {
         // Redis 초기화 (20개 재고 설정)
         redissonClient.getBucket("product_stock:" + PRODUCT_INFO_ID).set(20);
 
-        // 데이터베이스 초기화
-        orderRepository.deleteAll();
-        snapshotRepository.deleteAll();
-        paymentRepository.deleteAll();
     }
 
     @Test

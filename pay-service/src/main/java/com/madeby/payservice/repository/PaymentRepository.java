@@ -1,6 +1,7 @@
-package com.madeby.orderservice.repository;
+package com.madeby.payservice.repository;
 
-import com.madeby.orderservice.entity.Payment;
+
+import com.madeby.payservice.entity.Payment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

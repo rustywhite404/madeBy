@@ -1,0 +1,62 @@
+server:
+  port: 8086
+
+spring:
+  cloud:
+    loadbalancer:
+      cache:
+        enabled: true
+        ttl: 300 # 캐시 유효 기간 (초 단위)
+  application:
+    name: pay-service
+  datasource:
+    url: jdbc:mysql://madeby-db:3306/pay_service
+    username: root
+    password: 1234 # MySQL root 비밀번호
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+      hibernate.dialect: org.hibernate.dialect.MySQL8Dialect  # MySQL 8에 적합한 Dialect
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    non-secure-port-enabled: true
+    metadata-map:
+      instanceId: ${spring.application.name}:${random.value}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      payServiceCircuitBreaker: # Circuit Breaker 이름
+        register-health-indicator: true
+        sliding-window-size: 100  # 실패/성공 비율을 계산할 요청 수 (슬라이딩 윈도우)
+        sliding-window-type: COUNT_BASED # COUNT_BASED (개수 기준) or TIME_BASED (시간 기준)
+        minimum-number-of-calls: 50 # Circuit Breaker가 작동하기 위한 최소 호출 수
+        failure-rate-threshold: 60 # 실패율(%) 기준으로 Circuit Breaker를 열지 결정
+        wait-duration-in-open-state: 10s # Circuit Breaker가 열려 있는 상태 유지 시간
+        permitted-number-of-calls-in-half-open-state: 3 # 반닫힘 상태에서 허용할 호출 수
+        ignore-exceptions:
+          - com.madeBy.shared.exception.MadeByException
+  retry:
+    instances:
+      payServiceRetry: # Retry 이름
+        max-attempts: 2 # 최대 재시도 횟수
+        wait-duration: 500ms # 재시도 간격
+        enable-exponential-backoff: true #점진적으로 간격 증가
+        ignore-exceptions:
+          - com.madeBy.shared.exception.MadeByException
+
+logging:
+  level:
+    org.springframework.web: DEBUG

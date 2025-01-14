@@ -1,7 +1,7 @@
 package com.madeby.orderservice.service;
 
 import com.madeby.orderservice.client.ProductServiceClient;
-import com.madeby.orderservice.entity.PaymentStatus;
+import com.madeBy.shared.entity.PaymentStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +14,6 @@ import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.IntStream;
 
 @SpringBootTest
 public class HighConcurrencyOrderTest {

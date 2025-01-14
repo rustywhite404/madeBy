@@ -1,12 +1,13 @@
-package com.madeby.orderservice.scheduler;
+package com.madeby.payservice.scheduler;
 
-import com.madeby.orderservice.client.ProductServiceClient;
-import com.madeby.orderservice.entity.OrderProductSnapshot;
-import com.madeby.orderservice.entity.Orders;
-import com.madeby.orderservice.entity.Payment;
-import com.madeby.orderservice.entity.PaymentStatus;
-import com.madeby.orderservice.repository.OrderRepository;
-import com.madeby.orderservice.repository.PaymentRepository;
+import com.madeBy.shared.entity.PaymentStatus;
+import com.madeby.payservice.client.OrderServiceClient;
+import com.madeby.payservice.client.ProductServiceClient;
+import com.madeby.payservice.dto.OrderProductSnapshotDto;
+import com.madeby.payservice.dto.OrderRequestDto;
+import com.madeby.payservice.dto.OrderResponseDto;
+import com.madeby.payservice.entity.Payment;
+import com.madeby.payservice.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RScript;
@@ -25,8 +26,8 @@ import java.util.List;
 public class PaymentTimeoutScheduler {
 
     private final PaymentRepository paymentRepository;
-    private final OrderRepository orderRepository;
     private final ProductServiceClient productServiceClient;
+    private final OrderServiceClient orderServiceClient;
     private final RedissonClient redissonClient;
 
     @Scheduled(fixedRate = 300000) // 5분마다 실행
@@ -52,11 +53,10 @@ public class PaymentTimeoutScheduler {
         paymentRepository.save(payment);
 
         // 2. 관련 주문 조회
-        Orders order = orderRepository.findById(payment.getOrderId())
-                .orElseThrow(() -> new IllegalArgumentException("해당 결제에 대한 주문이 존재하지 않습니다. 결제 ID: " + payment.getId()));
+        OrderResponseDto order = orderServiceClient.getOrderDetails(payment.getOrderId());
 
         // 3. 주문 상품 스냅샷을 기반으로 재고 복구
-        for (OrderProductSnapshot snapshot : order.getOrderProductSnapshots()) {
+        for (OrderProductSnapshotDto snapshot : order.getProducts()) {
             Long productInfoId = snapshot.getProductInfoId();
             int quantity = snapshot.getQuantity();
 

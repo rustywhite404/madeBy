@@ -1,4 +1,4 @@
-package com.madeby.orderservice.entity;
+package com.madeBy.shared.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

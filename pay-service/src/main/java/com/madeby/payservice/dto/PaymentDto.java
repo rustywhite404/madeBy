@@ -1,5 +1,4 @@
-package com.madeby.orderservice.dto;
-
+package com.madeby.payservice.dto;
 import com.madeBy.shared.entity.PaymentStatus;
 import lombok.*;
 

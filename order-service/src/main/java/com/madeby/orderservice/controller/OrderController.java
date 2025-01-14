@@ -3,16 +3,18 @@ package com.madeby.orderservice.controller;
 import com.madeBy.shared.common.ApiResponse;
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
+import com.madeby.orderservice.dto.OrderProductSnapshotDto;
 import com.madeby.orderservice.dto.OrderRequestDto;
 import com.madeby.orderservice.dto.OrderResponseDto;
 import com.madeby.orderservice.entity.Orders;
-import com.madeby.orderservice.entity.PaymentStatus;
+import com.madeBy.shared.entity.PaymentStatus;
 import com.madeby.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -91,5 +93,43 @@ public class OrderController {
         Orders order = orderService.findOrderById(orderId);
         OrderResponseDto response = OrderResponseDto.fromEntity(order);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // 주문 상세 조회
+    @GetMapping("/{orderId}")
+    public OrderResponseDto getOrderDetails(@PathVariable Long orderId) {
+        // 1. 주문 엔티티 조회
+        Orders order = orderService.getOrderById(orderId);
+
+        // 2. Orders → OrderResponseDto로 변환
+        return convertToDto(order);
+    }
+
+    private OrderResponseDto convertToDto(Orders order) {
+        // 스냅샷 목록 변환
+        List<OrderProductSnapshotDto> snapshotDtos = order.getOrderProductSnapshots()
+                .stream()
+                .map(snapshot -> OrderProductSnapshotDto.builder()
+                        .productInfoId(snapshot.getProductInfoId())
+                        .stock(snapshot.getStock())
+                        .size(snapshot.getSize())
+                        .color(snapshot.getColor())
+                        .quantity(snapshot.getQuantity())
+                        .price(snapshot.getPrice())
+                        .totalAmount(snapshot.getTotalAmount())
+                        .build())
+                .toList();
+
+        // Orders → OrderResponseDto 매핑
+        return OrderResponseDto.builder()
+                .orderId(order.getId())
+                .status(order.getStatus().name())  // OrderStatus enum일 경우 name() 등
+                .totalAmount(snapshotDtos.stream()
+                        .map(s -> s.getTotalAmount())
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)) // 예시: 스냅샷 총합
+                .orderDate(order.getCreatedAt().toLocalDate())   // 예: createdAt이 있다면
+                .isReturnable(order.isReturnable())
+                .products(snapshotDtos)
+                .build();
     }
 }

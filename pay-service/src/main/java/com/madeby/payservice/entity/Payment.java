@@ -1,4 +1,4 @@
-package com.madeby.orderservice.entity;
+package com.madeby.payservice.entity;
 
 import com.madeBy.shared.entity.PaymentStatus;
 import jakarta.persistence.*;
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Payment extends Timestamped{
+public class Payment extends Timestamped {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
