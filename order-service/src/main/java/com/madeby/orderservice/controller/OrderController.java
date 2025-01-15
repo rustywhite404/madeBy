@@ -11,12 +11,14 @@ import com.madeBy.shared.entity.PaymentStatus;
 import com.madeby.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -25,6 +27,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final RedisTemplate redisTemplate;
 
     @PostMapping("/{orderId}/return")
     public ResponseEntity<Object> requestReturn(
@@ -58,17 +61,40 @@ public class OrderController {
             throw new MadeByException(MadeByErrorCode.MIN_AMOUNT, "주문 수량은 1개 이상이어야 합니다.");
         }
 
-        // 서비스 호출
-        PaymentStatus status = orderService.placeOrder(userId, requestDto.getProductInfoId(), requestDto.getQuantity());
+        Map<String, Object> response = orderService.placeOrder(userId, requestDto.getProductInfoId(), requestDto.getQuantity());
 
-        if (status == PaymentStatus.COMPLETED) {
-            // 주문 성공 시
-            return ResponseEntity.ok(ApiResponse.success("주문이 성공적으로 완료되었습니다. 주문 상태: " + status));
-        } else {
-            // 주문 실패 시
-            return ResponseEntity.badRequest().body(ApiResponse.failure(MadeByErrorCode.BUY_FAILED.name(), "주문에 실패했습니다. 주문 상태: " + status));
-        }
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
+    // 최종 상태를 확인하기 위한 Polling 메서드
+    private PaymentStatus pollForFinalStatus(Long userId, Long productInfoId) {
+        String redisKey = "order_status_" + userId + "_" + productInfoId;
+
+        for (int i = 0; i < 10; i++) { // 최대 10번 시도
+            Object statusObject = redisTemplate.opsForValue().get(redisKey);
+            log.info("-----------[statusObject]:"+statusObject);
+            if (statusObject instanceof String) { // Redis에서 문자열로 저장된 경우
+                String status = (String) statusObject;
+                try {
+                    return PaymentStatus.valueOf(status); // Enum으로 변환
+                } catch (IllegalArgumentException e) {
+                    log.error("Redis에 저장된 상태가 올바르지 않습니다: {}", status, e);
+                    throw new MadeByException(MadeByErrorCode.INVALID_STATUS, "주문 상태가 유효하지 않습니다.");
+                }
+            } else if (statusObject != null) {
+                log.error("Redis에서 예상치 못한 데이터 타입을 반환했습니다: {}", statusObject.getClass());
+                throw new MadeByException(MadeByErrorCode.INVALID_STATUS, "Redis에 저장된 상태 데이터가 유효하지 않습니다.");
+            }
+
+            try {
+                Thread.sleep(500); // 500ms 대기
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("상태 확인 중 인터럽트 발생", e);
+            }
+        }
+        throw new MadeByException(MadeByErrorCode.STATUS_TIMEOUT, "주문 상태를 확인하지 못했습니다.");
+    }
+
 
     @GetMapping
     public ResponseEntity<List<OrderResponseDto>> getOrders(

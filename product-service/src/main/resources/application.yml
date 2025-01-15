@@ -12,6 +12,18 @@ spring:
       repositories:
         enabled: true  # Elasticsearch Repository 활성화
       auto-create-index: false # 자동 인덱스 생성 비활성화
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: product-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*" # 모든 패키지에서 직렬화된 객체를 신뢰
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server:
   tomcat:

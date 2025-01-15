@@ -43,6 +43,8 @@ public enum MadeByErrorCode {
     RETURN_NOT_ALLOWED("해당 주문은 반품이 불가능합니다. 상세 사유는 고객센터에 문의하세요."),
     STOCK_UPDATE_FAILED("재고 업데이트에 실패했습니다."),
     NO_PAYMENT("해당 주문에 대한 결제 정보를 찾을 수 없습니다."),
+    INVALID_STATUS("주문 상태값이 올바르지 않습니다."),
+    STATUS_TIMEOUT("주문 상태를 확인하지 못했습니다."),
     
 
     DECRYPTION_ERROR("복호화에 실패했습니다."),

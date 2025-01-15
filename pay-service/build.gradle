@@ -15,6 +15,9 @@ ext {
 dependencies {
     implementation project(':shared') // 공통 모듈 참조
     implementation 'org.redisson:redisson-spring-boot-starter:3.21.1'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation 'org.springframework.kafka:spring-kafka'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
 }
 
 tasks.withType(Test) {

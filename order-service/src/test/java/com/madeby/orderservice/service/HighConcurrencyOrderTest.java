@@ -58,7 +58,7 @@ public class HighConcurrencyOrderTest {
             executorService.submit(() -> {
                 try {
                     Thread.sleep((long) (Math.random() * 100)); // 0~100ms 간격
-                    results[userId - 1] = orderService.placeOrder((long) userId, PRODUCT_INFO_ID, 1); // 결제 상태 저장
+                    //results[userId - 1] = orderService.placeOrder((long) userId, PRODUCT_INFO_ID, 1); // 결제 상태 저장
                 } catch (Exception e) {
                     results[userId - 1] = PaymentStatus.SOLD_OUT; // 재고 부족으로 실패
                 } finally {

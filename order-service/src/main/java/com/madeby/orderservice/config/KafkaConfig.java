@@ -1,4 +1,4 @@
-package com.madeby.productservice.config;
+package com.madeby.orderservice.config;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -30,6 +30,7 @@ public class KafkaConfig {
         typeMapper.setTypePrecedence(DefaultJackson2JavaTypeMapper.TypePrecedence.TYPE_ID); // 기본 설정
 
         JsonSerializer<Object> serializer = new JsonSerializer<>();
+        serializer.setAddTypeInfo(true); // 클래스 정보 포함
         serializer.setTypeMapper(typeMapper);
 
         return new DefaultKafkaProducerFactory<>(configProps);

@@ -25,6 +25,7 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.*;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +47,10 @@ public class ProductsService {
     private final CacheManager cacheManager;
     private final ObjectMapper objectMapper;
     private final RedisTemplate redisTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ProductElasticsearchRepository productElasticsearchRepository;
+
+
 
     @Transactional
     public ProductInfoDto createLimitedProductInfo(Long productId, ProductInfoDto productInfoDto) throws JsonProcessingException {

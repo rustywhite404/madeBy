@@ -2,6 +2,8 @@ package com.madeby.orderservice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.madeBy.shared.entity.PaymentStatus;
+import com.madeBy.shared.events.OrderCreatedEvent;
+import com.madeBy.shared.events.OrderStatusUpdatedEvent;
 import com.madeBy.shared.exception.MadeByErrorCode;
 import com.madeBy.shared.exception.MadeByException;
 import com.madeby.orderservice.client.CartServiceClient;
@@ -13,15 +15,21 @@ import com.madeby.orderservice.client.PayServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -34,6 +42,7 @@ public class OrderService {
     private final ProductServiceClient productServiceClient;
     private final PayServiceClient payServiceClient;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final KafkaTemplate kafkaTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Redis 키를 상수로 분리
@@ -208,8 +217,7 @@ public class OrderService {
 
     // 주문 생성(단일 상품 주문)
     @Transactional
-    public PaymentStatus placeOrder(Long userId, Long productInfoId, int quantity) {
-
+    public Map<String, Object> placeOrder(Long userId, Long productInfoId, int quantity) {
         StringBuilder keyBuilder = new StringBuilder(PRODUCT_INFO_REDIS_KEY_PREFIX);
         keyBuilder.append(productInfoId);
         ProductInfoDto productInfoDto = null;
@@ -222,7 +230,6 @@ public class OrderService {
             }
         }
 
-        // Redis에서 조회 실패시 Feign Client 사용
         if (productInfoDto == null) {
             productInfoDto = productServiceClient.getProductInfo(productInfoId);
             if (productInfoDto == null) {
@@ -231,17 +238,14 @@ public class OrderService {
             log.info("상품 정보를 Feign Client에서 조회 성공: productInfoId = {}", productInfoId);
         }
 
-        // 2. 판매중인 상품인지 확인
         if (!productInfoDto.isVisible()) {
             throw new MadeByException(MadeByErrorCode.NO_SELLING_PRODUCT);
         }
 
-        // 3. 재고 확인 및 예약
         if (!stockReservationService.reserveStock(productInfoId, quantity)) {
             throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT);
         }
 
-        // 4. 주문, 스냅샷 생성 및 저장
         Orders order = new Orders(userId, OrderStatus.ORDERED, true);
         OrderProductSnapshot snapshot = new OrderProductSnapshot(
                 order,
@@ -257,26 +261,52 @@ public class OrderService {
         order.getOrderProductSnapshots().add(snapshot);
         orderRepository.save(order);
 
+        // 결제 시도 이벤트 발행
+        OrderCreatedEvent event = new OrderCreatedEvent(
+                order.getId(),
+                userId,
+                productInfoId,
+                quantity,
+                "INITIATE_PAYMENT"
+        );
+        kafkaTemplate.send("order-created-topic", event);
+        log.info("OrderCreatedEvent 발행: {}", event);
 
-        // 5. 결제 화면 진입 처리
-        initiatePayment(order.getId(), userId);
+        // Kafka 리스너에서 결제 상태를 업데이트하기 전까지는 상태를 PENDING으로 반환
+        PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
-        // 6. 결제 시도 (모의 결제)
-        PaymentStatus result = payServiceClient.processPayment(order.getId(), userId);
+        // 초기 응답 데이터 구성
+        Map<String, Object> response = new HashMap<>();
+        response.put("orderId", order.getId());
+        response.put("orderStatus", "ORDERED");
+        response.put("paymentStatus", paymentStatus.name());
+        response.put("message", "주문이 성공적으로 생성되었습니다. 결제 상태를 확인 중입니다.");
 
-        // 7. 결제 결과 처리
-        if (result == PaymentStatus.COMPLETED) {
-            // DB에 최종 재고 반영
-            boolean decrementSuccess = productServiceClient.decrementStock(productInfoId, quantity);
-            if (!decrementSuccess) {
-                stockReservationService.cancelReservation(productInfoId, quantity);
-                throw new MadeByException(MadeByErrorCode.NOT_ENOUGH_PRODUCT, "재고가 부족합니다");
-            }
-        } else {
-            stockReservationService.cancelReservation(productInfoId, quantity);
-        }
-        return result;
+        return response;
     }
+
+
+    @KafkaListener(topics = "order-status-updated-topic", groupId = "order-service")
+    public void handleOrderStatusUpdated(OrderStatusUpdatedEvent event) {
+        log.info("OrderStatusUpdatedEvent 수신: {}", event);
+
+        Orders order = orderRepository.findById(event.getOrderId())
+                .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_ORDER));
+
+        if ("COMPLETED".equals(event.getStatus())) {
+            log.info("결제 완료: 주문 ID = {}", order.getId());
+        } else if ("FAILED".equals(event.getStatus())) {
+            log.warn("결제 실패: 주문 ID = {}", order.getId());
+            stockReservationService.cancelReservation(event.getProductInfoId(), event.getQuantity());
+        }
+        order.setStatus(OrderStatus.valueOf(event.getStatus()));
+        orderRepository.save(order);
+        // 최종 상태 Redis에 저장
+        String redisKey = "order_status_" + order.getUserId() + "_" + event.getProductInfoId();
+        redisTemplate.opsForValue().set(redisKey, event.getStatus(), Duration.ofMinutes(5)); // 5분 TTL
+        log.info("주문 상태 Redis에 저장: key={}, status={}", redisKey, event.getStatus());
+    }
+
 
     // 주문 조회(조회만 수행하므로 읽기 전용 트랜잭션)
 
@@ -325,6 +355,7 @@ public class OrderService {
     }
 
 
+    @Transactional(readOnly = true)
     public Orders getOrderById(Long orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new MadeByException(MadeByErrorCode.NO_ORDER));

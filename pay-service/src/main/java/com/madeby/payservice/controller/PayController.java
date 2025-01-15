@@ -20,7 +20,7 @@ public class PayController {
     public PaymentStatus processPayment(@RequestParam Long orderId,
                                         @RequestParam Long userId) {
         log.info("PayController.processPayment - orderId: {}, userId: {}", orderId, userId);
-        PaymentStatus result = payService.processPayment(orderId, userId);
+        PaymentStatus result = payService.processPayment(orderId);
         return result;
     }
 

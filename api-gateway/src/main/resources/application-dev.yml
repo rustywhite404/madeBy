@@ -17,8 +17,11 @@ spring:
         ttl: 300 # 캐시 유효 기간 (초 단위)
     gateway:
       httpclient:
-        connect-timeout: 5000 # 5초
-        response-timeout: 20000 # 20초
+        connect-timeout: 10000 # 10초
+        response-timeout: 30000 # 30초
+        pool:
+          max-connections: 1000 # 동시 커넥션 수 제한
+          acquire-timeout: 5000 # 연결을 기다리는 최대 시간
       routes:
         - id: user-service
           uri: http://localhost:8082
@@ -45,6 +48,13 @@ spring:
             - Path=/api/cart/**
           filters:
             - JwtFilter
+
+        - id: pay-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/pay/**
+          filters:
+            - JwtFilter
 jwt:
   secret:
     key: ${JWT_SECRET_KEY:7Iqk7YyM66W07YOA7L2U65Sp7YG065+9U3ByaW5n6rCV7J2Y7Yqc7YSw7LWc7JuQ67mI7J6F64uI64ukLg==}
@@ -68,6 +78,6 @@ eureka:
 
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.web.reactive: DEBUG
-    org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: INFO
+    org.springframework.web.reactive: INFO
+    org.springframework.security: INFO

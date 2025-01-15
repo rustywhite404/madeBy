@@ -7,6 +7,18 @@ spring:
       maximum-pool-size: 450       # MySQL max_connections 제한의 90%
       minimum-idle: 50            # 최소 유휴 커넥션 수
       connection-timeout: 3000    # 커넥션 대기 타임아웃 (ms)
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: order-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*" # 모든 패키지에서 직렬화된 객체를 신뢰
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 server:
   tomcat:
