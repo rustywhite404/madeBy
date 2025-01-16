@@ -1,4 +1,4 @@
-package com.madeby.apigateway.filter;
+package com.madeby.apigateway.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.config.CorsRegistry;
