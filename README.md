@@ -1,7 +1,17 @@
+## 📖 목차 
+1. [🚀 프로젝트 소개](#-프로젝트-소개)
+2. [🛠️ 주요 구현 내용](#-주요-구현-내용)
+3. [⚡ 성능 최적화 사례](#-성능-최적화-사례)
+4. [🐞 트러블 슈팅](#-트러블-슈팅)
+5. [📌 기술적 의사결정](#-기술적-의사결정)
+6. [📐 System Architecture](#-structure)
+7. [⏳ Sequence Diagram](#-sequence-diagram)
+8. [📜 산출물](#-산출물) 
 
-# 선착순 구매 e-commerce : MadeBy
+---
+# 선착순 구매 e-commerce : MadeBy 
 
-## 📦 프로젝트 소개
+## 🚀 프로젝트 소개
 
 기본적인 전자상거래 뿐만 아니라 한정 상품에 대한 선착순 구매 기회가 있는 E-commerce 사이트입니다.  
 쇼핑몰, 중고거래 사이트 등 다양한 형태의 서비스로 변화할 수 있는 발판이 되는 환경을 구현하였습니다.  
@@ -30,7 +40,7 @@
 ![Postman](https://img.shields.io/badge/-Postman-333333?style=flat&logo=postman)
 
 
-## 📦 주요 구현 내용 
+## 🛠️ 주요 구현 내용 
 
 - **MSA** 기반으로 서비스 독립성과 확장성 향상
 - **Eureka** 서비스 디스커버리와 **API Gateway**를 활용한 동적 서비스 등록 및 라우팅 구현
@@ -41,16 +51,14 @@
 - **Docker Compose**로 컨테이너 기반의 통합 개발/배포 환경 구성
 - **Naver Open API**를 이용한 상품 데이터베이스 구축, Naver SMTP로 이메일 인증 구현
 
-## 📦 성능 최적화 사례
+## ⚡ 성능 최적화 사례
 - **주문 결제 API 성능 개선을 위한 시도**
     - 조회가 빈번한 컬럼 복합 인덱스 처리
     - MySQL 스케일 아웃을 통해 각 서버의 max Connection증가 및 장애 독립성 보장
     - 높은 트래픽을 유발하는 한정 상품은 Redis에 정보를 등록해두고 캐시에서 조회, 일반 상품은 Feign Client로 조회하도록 비즈니스 로직 설계 변경
     - GC 사용량을 줄이기 위한 코드 개선
     - 개선 결과 :  
-      각 개선점에 대한 상세 내용 및 상세 테스트 결과는 여기에서 확인하실 수 있습니다 → [ 페이지 바로가기 ]  
-      GC 사용량 감소 → 애플리케이션 성능 저하 방지  
-      Heap 사용량 증가 → 많은 객체를 메모리에 유지하여 객체 재생성 비용 절약  
+      각 개선점에 대한 상세 내용 및 상세 테스트 결과는 여기에서 확인하실 수 있습니다 → [ 페이지 바로가기 ]          
       **TPS** : 평균 62% 개선
       <table>
       <tr>
@@ -68,7 +76,7 @@
             <td>630.6</td>
             <td>636.0</td>
         </tr>
-      </table>  
+      </table>
 
       **Mean Test Time(Latency)** : 지연시간 평균 31% 감소
         <table>
@@ -88,6 +96,9 @@
             <td>550.30ms</td>
         </tr>
       </table>  
+      GC 사용량 감소 → 애플리케이션 성능 저하 방지 
+      
+      Heap 사용량 증가 → 많은 객체를 메모리에 유지하여 객체 재생성 비용 절약
 ---
 - **상품 검색 성능 개선**
 
@@ -213,7 +224,7 @@
 
 
 
-## 📦 트러블 슈팅  
+## 🐞 트러블 슈팅  
 - 동시성 제어를 위한 시도들(Redis Lock, Lua Script)
 - 주문 결제 성능 개선 중 생긴 Redis 역직렬화 문제 해결 
 - 검색 수행 시 N+1 문제 해결 
@@ -223,7 +234,7 @@
 - AccessToken 재발급 과정에서 루프 발생  
 - nGrinder와 K6로 테스트 중 생긴 문제 해결
  
-## 📦 기술적 의사결정
+## 📌 기술적 의사결정
 
 - 선착순 구매 시스템 설계 시 재고 수량 표기 방법
 - 예상 가능한 유저 불편목록과 중요도 결정 
@@ -234,38 +245,17 @@
 
 
 
-## 📦 Structure
+## 📐 System Architecture
 ![Structure](https://github.com/user-attachments/assets/5852e8eb-e9c4-4117-807b-1d6fac444f2a)
 
-## 📦 Sequence Diagram
+## ⏳ Sequence Diagram
 ![주문 결제 시퀀스 다이어그램](https://github.com/user-attachments/assets/1bdd3354-2e58-4358-9a95-3de544e0f0cc)
 
-## 📦 산출물
-- [📂 API 명세서](https://documenter.getpostman.com/view/22818248/2sAYJ3FhBW#intro)
-- [📂 ERD](https://github.com/rustywhite404/madeBy/wiki/ERD)
-- [📂 폴더 구조도](https://github.com/rustywhite404/madeBy/wiki/%ED%8F%B4%EB%8D%94-%EA%B5%AC%EC%A1%B0%EB%8F%84)
-- [📂 프로젝트 환경 설정 및 실행 가이드](https://github.com/rustywhite404/madeBy/wiki/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%99%98%EA%B2%BD-%EC%84%A4%EC%A0%95-%EB%B0%8F-%EC%8B%A4%ED%96%89-%EA%B0%80%EC%9D%B4%EB%93%9C)
+## 📜 산출물
+<a href="https://documenter.getpostman.com/view/22818248/2sAYJ3FhBW#intro" target="_blank">📂 API 명세서</a>  
+<a href="https://github.com/rustywhite404/madeBy/wiki/ERD" target="_blank">📂 ERD</a>  
+<a href="https://github.com/rustywhite404/madeBy/wiki/%ED%8F%B4%EB%8D%94-%EA%B5%AC%EC%A1%B0%EB%8F%84" target="_blank">📂 폴더 구조도</a>  
+<a href="https://github.com/rustywhite404/madeBy/wiki/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%99%98%EA%B2%BD-%EC%84%A4%EC%A0%95-%EB%B0%8F-%EC%8B%A4%ED%96%89-%EA%B0%80%EC%9D%B4%EB%93%9C" target="_blank">📂 프로젝트 환경 설정 및 실행 가이드</a>
 
 
-
-<style>
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 20px 0;
-        font-size: 14px;
-        text-align: left;
-    }
-    th, td {
-        padding: 10px;
-        border: 1px solid #ddd;
-    }
-    th {
-        background-color: #f4f4f4;
-    }
-    .highlight {
-        background-color: #e3f2fd;
-        font-weight: bold;
-    }
-</style>
 
