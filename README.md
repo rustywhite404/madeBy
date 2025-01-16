@@ -1,15 +1,15 @@
-## 📖 목차 
+## 📖 목차
 1. [🚀 프로젝트 소개](#-프로젝트-소개)
-2. [🛠️ 주요 구현 내용](#-주요-구현-내용)
+2. [⚙️ 주요 구현 내용](#-주요-구현-내용)
 3. [⚡ 성능 최적화 사례](#-성능-최적화-사례)
 4. [🐞 트러블 슈팅](#-트러블-슈팅)
 5. [📌 기술적 의사결정](#-기술적-의사결정)
-6. [📐 System Architecture](#-System-Architecture)
+6. [📐 System Architecture](#-system-architecture)
 7. [⏳ Sequence Diagram](#-sequence-diagram)
-8. [📜 산출물](#-산출물) 
+8. [📜 산출물](#-산출물)
 
 ---
-# 선착순 구매 e-commerce : MadeBy 
+# 선착순 구매 e-commerce : MadeBy
 
 ## 🚀 프로젝트 소개
 
@@ -40,7 +40,7 @@
 ![Postman](https://img.shields.io/badge/-Postman-333333?style=flat&logo=postman)
 
 
-## 🛠️ 주요 구현 내용
+## 🔨 주요 구현 내용
 
 - **MSA** 기반으로 서비스 독립성과 확장성 향상
 - **Eureka** 서비스 디스커버리와 **API Gateway**를 활용한 동적 서비스 등록 및 라우팅 구현
@@ -97,7 +97,7 @@
         </tr>
       </table>  
       GC 사용량 감소 → 애플리케이션 성능 저하 방지 
-      
+
       Heap 사용량 증가 → 많은 객체를 메모리에 유지하여 객체 재생성 비용 절약
 ---
 - **상품 검색 성능 개선**
@@ -224,23 +224,23 @@
 
 
 
-## 🐞 트러블 슈팅  
+## 🐞 트러블 슈팅
 - 동시성 제어를 위한 시도들(Redis Lock, Lua Script)
-- 주문 결제 성능 개선 중 생긴 Redis 역직렬화 문제 해결 
-- 검색 수행 시 N+1 문제 해결 
+- 주문 결제 성능 개선 중 생긴 Redis 역직렬화 문제 해결
+- 검색 수행 시 N+1 문제 해결
 - Circuit Breaker 구현 위치와 Exception 필터링 문제 해결
 - Jackson 직렬화-역직렬화 과정에서 발생한 순환 참조 문제 해결
-- AccessToken이 발급 되었는데 사용자가 존재하지 않는 문제 해결   
-- AccessToken 재발급 과정에서 루프 발생  
+- AccessToken이 발급 되었는데 사용자가 존재하지 않는 문제 해결
+- AccessToken 재발급 과정에서 루프 발생
 - nGrinder와 K6로 테스트 중 생긴 문제 해결
- 
+
 ## 📌 기술적 의사결정
 
 - 선착순 구매 시스템 설계 시 재고 수량 표기 방법
-- 예상 가능한 유저 불편목록과 중요도 결정 
+- 예상 가능한 유저 불편목록과 중요도 결정
 - 모듈 간 통신 시 Feign Client vs. Kafka 기술 스택 결정
-- Elastic Search 형태소 검색 & 비정형 텍스트 검색 방식 결정  
-- 내부 캐시 ehCache vs. Caffeine 기술 스택 결정  
+- Elastic Search 형태소 검색 & 비정형 텍스트 검색 방식 결정
+- 내부 캐시 ehCache vs. Caffeine 기술 스택 결정
 
 
 
