@@ -1,11 +1,11 @@
 ## 📖 목차
 1. [🚀 프로젝트 소개](#-프로젝트-소개)
-2. [⏳ Sequence Diagram](#-sequence-diagram)
+2. [📐 System Architecture](#-system-architecture)
 3. [🔨 주요 구현 내용](#-주요-구현-내용)
 4. [⚡ 성능 최적화 사례](#-성능-최적화-사례)
 5. [🐞 트러블 슈팅](#-트러블-슈팅)
 6. [📌 기술적 의사결정](#-기술적-의사결정)
-7. [📐 System Architecture](#-system-architecture)
+7. [⏳ Sequence Diagram](#-sequence-diagram)
 8. [📜 산출물](#-산출물)
 
 ---
@@ -20,14 +20,16 @@
 **Backend**
 
 ![springboot](https://img.shields.io/badge/-springboot-333333?style=flat&logo=springboot)
+![springdataJPA](https://img.shields.io/badge/-springDataJPA-333333?style=flat&logo=spring)
+![springCloud](https://img.shields.io/badge/-springCloud-333333?style=flat&logo=spring)
 ![springsecurity](https://img.shields.io/badge/-springsecurity-333333?style=flat&logo=springsecurity)
+![JWT](https://img.shields.io/badge/-JWT-333333?style=flat&logo=JSON%20web%20tokens)
 ![Redis](https://img.shields.io/badge/-Redis-333333?style=flat&logo=Redis)
 ![elasticsearch](https://img.shields.io/badge/-elasticsearch-333333?style=flat&logo=elasticsearch)
 ![Kafka](https://img.shields.io/badge/-Kafka-333333?style=flat&logo=apachekafka)
 ![Caffeine](https://img.shields.io/badge/-Caffeine-333333?style=flat&logo=CoffeeScript)
 ![MySQL](https://img.shields.io/badge/-MySQL-333333?style=flat&logo=mysql)
 ![Java](https://img.shields.io/badge/-Java-333333?style=flat&logo=Java&logoColor=007396)
-![JPA](https://img.shields.io/badge/-JPA-333333?style=flat&logo=JPA)
 
 **DevOps & Testing**
 
@@ -229,22 +231,21 @@
 
 
 ## 🐞 트러블 슈팅
-- 동시성 제어를 위한 시도들(Redis Lock, Lua Script)
-- 주문 결제 성능 개선 중 생긴 Redis 역직렬화 문제 해결
-- 검색 수행 시 N+1 문제 해결
-- Circuit Breaker 구현 위치와 Exception 필터링 문제 해결
-- Jackson 직렬화-역직렬화 과정에서 발생한 순환 참조 문제 해결
-- AccessToken이 발급 되었는데 사용자가 존재하지 않는 문제 해결
-- AccessToken 재발급 과정에서 루프 발생
-- nGrinder와 K6로 테스트 중 생긴 문제 해결
+- [동시성 제어를 위한 시도들(Redis Lock, Lua Script)](https://github.com/rustywhite404/madeBy/wiki/%EB%8F%99%EC%8B%9C%EC%84%B1-%EC%A0%9C%EC%96%B4%EB%A5%BC-%EC%9C%84%ED%95%9C-%EC%8B%9C%EB%8F%84)
+- [주문 결제 성능 개선 중 생긴 Redis 역직렬화 문제 해결](https://github.com/rustywhite404/madeBy/wiki/Redis-%EC%97%AD%EC%A7%81%EB%A0%AC%ED%99%94-%EB%AC%B8%EC%A0%9C)
+- [검색 수행 시 N+1 문제 해결](https://github.com/rustywhite404/madeBy/wiki/JPA-N+1-%EB%AC%B8%EC%A0%9C)
+- [Circuit Breaker 구현 위치와 Exception 필터링 문제 해결](https://github.com/rustywhite404/madeBy/wiki/Circuit-Breaker,-Exception-%ED%95%84%ED%84%B0%EB%A7%81-%EB%AC%B8%EC%A0%9C)
+- [Jackson 직렬화-역직렬화 과정에서 발생한 순환 참조 문제 해결](https://github.com/rustywhite404/madeBy/wiki/Jackson-%EC%A7%81%EB%A0%AC%ED%99%94,-%EC%97%AD%EC%A7%81%EB%A0%AC%ED%99%94-%EC%88%9C%ED%99%98-%EC%B0%B8%EC%A1%B0-%EB%AC%B8%EC%A0%9C)
+- [AccessToken이 발급 되었는데 사용자가 존재하지 않는 문제 해결](https://github.com/rustywhite404/madeBy/wiki/AccessToken-%EA%B4%80%EB%A0%A8-%EB%AC%B8%EC%A0%9C#1-accesstoken%EC%9D%B4-%EB%B0%9C%EA%B8%89-%EB%90%98%EC%97%88%EB%8A%94%EB%8D%B0%EB%8F%84-%EC%82%AC%EC%9A%A9%EC%9E%90%EB%A5%BC-%EC%B0%BE%EC%9D%84-%EC%88%98-%EC%97%86%EB%8A%94-%EB%AC%B8%EC%A0%9C)
+- [AccessToken 재발급 과정에서 루프 발생](https://github.com/rustywhite404/madeBy/wiki/AccessToken-%EA%B4%80%EB%A0%A8-%EB%AC%B8%EC%A0%9C#2-accesstoken-%EC%9E%AC%EB%B0%9C%EA%B8%89-%EB%8B%A8%EA%B3%84%EC%97%90%EC%84%9C-%EB%A3%A8%ED%94%84-%EB%B0%9C%EC%83%9D)
+- [nGrinder와 K6로 테스트 중 생긴 문제 해결](https://github.com/rustywhite404/madeBy/wiki/nGrinder-%ED%85%8C%EC%8A%A4%ED%8A%B8-%ED%99%98%EA%B2%BD-%EB%AC%B8%EC%A0%9C)
 
 ## 📌 기술적 의사결정
-
-- 선착순 구매 시스템 설계 시 재고 수량 표기 방법
-- 예상 가능한 유저 불편목록과 중요도 결정
-- 모듈 간 통신 시 Feign Client vs. Kafka 기술 스택 결정
-- Elastic Search 형태소 검색 & 비정형 텍스트 검색 방식 결정
-- 내부 캐시 ehCache vs. Caffeine 기술 스택 결정
+- [선착순 구매 시스템 설계 시 재고 수량 표기 방법](https://github.com/rustywhite404/madeBy/wiki/%EC%84%A0%EC%B0%A9%EC%88%9C-%EA%B5%AC%EB%A7%A4-%EC%8B%9C%EC%8A%A4%ED%85%9C-%EC%9E%AC%EA%B3%A0-%ED%91%9C%EA%B8%B0-%EC%84%A4%EA%B3%84)
+- [예상 가능한 유저 불편목록과 중요도 결정](https://github.com/rustywhite404/madeBy/wiki/%EC%98%88%EC%83%81-%EA%B0%80%EB%8A%A5%ED%95%9C-%EC%9C%A0%EC%A0%80-%EB%B6%88%ED%8E%B8%EB%AA%A9%EB%A1%9D%EA%B3%BC-%EC%A4%91%EC%9A%94%EB%8F%84-%EA%B2%B0%EC%A0%95)
+- [모듈 간 통신 시 Feign Client vs. Kafka 기술 스택 결정](https://github.com/rustywhite404/madeBy/wiki/%EB%AA%A8%EB%93%88-%EA%B0%84-%ED%86%B5%EC%8B%A0-%EC%8B%9C-Feign-Client-vs.-Kafka)
+- [Elastic Search 형태소 검색 & 비정형 텍스트 검색 방식 결정](https://github.com/rustywhite404/madeBy/wiki/Elastic-search-%ED%95%9C%EA%B8%80-%ED%98%95%ED%83%9C%EC%86%8C-%EB%8B%A8%EC%9C%84-%EA%B2%80%EC%83%89-%EC%84%A4%EC%A0%95)
+- [내부 캐시 ehCache vs. Caffeine 기술 스택 결정](https://github.com/rustywhite404/madeBy/wiki/%EB%82%B4%EB%B6%80-%EC%BA%90%EC%8B%9C-ehCache-vs.-Caffeine)
 
 ## ⏳ Sequence Diagram
 ![주문 결제 시퀀스 다이어그램](https://github.com/user-attachments/assets/1bdd3354-2e58-4358-9a95-3de544e0f0cc)
