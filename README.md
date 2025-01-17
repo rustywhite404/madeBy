@@ -1,11 +1,11 @@
 ## 📖 목차
 1. [🚀 프로젝트 소개](#-프로젝트-소개)
-2. [⚙️ 주요 구현 내용](#-주요-구현-내용)
-3. [⚡ 성능 최적화 사례](#-성능-최적화-사례)
-4. [🐞 트러블 슈팅](#-트러블-슈팅)
-5. [📌 기술적 의사결정](#-기술적-의사결정)
-6. [📐 System Architecture](#-system-architecture)
-7. [⏳ Sequence Diagram](#-sequence-diagram)
+2. [⏳ Sequence Diagram](#-sequence-diagram)
+3. [🔨 주요 구현 내용](#-주요-구현-내용)
+4. [⚡ 성능 최적화 사례](#-성능-최적화-사례)
+5. [🐞 트러블 슈팅](#-트러블-슈팅)
+6. [📌 기술적 의사결정](#-기술적-의사결정)
+7. [📐 System Architecture](#-system-architecture)
 8. [📜 산출물](#-산출물)
 
 ---
@@ -39,6 +39,8 @@
 ![K6](https://img.shields.io/badge/-k6-333333?style=flat&logo=k6)
 ![Postman](https://img.shields.io/badge/-Postman-333333?style=flat&logo=postman)
 
+## 📐 System Architecture
+![Structure](https://github.com/user-attachments/assets/5852e8eb-e9c4-4117-807b-1d6fac444f2a)
 
 ## 🔨 주요 구현 내용
 
@@ -46,6 +48,7 @@
 - **Eureka** 서비스 디스커버리와 **API Gateway**를 활용한 동적 서비스 등록 및 라우팅 구현
 - **OpenFeign**을 통한 외부 모듈 통신, **Resilience4j** Circuit Breaker와 Retry로 회복 탄력성 강화
 - **Redis**와 Caffeine을 이용한 캐싱 처리로 서비스 성능 최적화
+- **Redis**와 Lua Script를 이용한 재고 감소 설계로 원자적 동시성 처리
 - **Kafka**를 통한 이벤트 기반 처리로 안정적인 트랜잭션 관리 및 실패 보상(Choreography SAGA)
 - **Elastic Search**를 도입하여 검색 결과 정확도 및 속도 향상
 - **Docker Compose**로 컨테이너 기반의 통합 개발/배포 환경 구성
@@ -58,7 +61,8 @@
     - 높은 트래픽을 유발하는 한정 상품은 Redis에 정보를 등록해두고 캐시에서 조회, 일반 상품은 Feign Client로 조회하도록 비즈니스 로직 설계 변경
     - GC 사용량을 줄이기 위한 코드 개선
     - 개선 결과 :  
-      각 개선점에 대한 상세 내용 및 상세 테스트 결과는 여기에서 확인하실 수 있습니다 → [ 페이지 바로가기 ]          
+      각 개선점에 대한 상세 내용 및 상세 테스트 결과 확인 → [ 🔗 페이지 바로가기 ](https://github.com/rustywhite404/madeBy/wiki/%EC%A3%BC%EC%9A%94-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-&-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90#1-%EC%A3%BC%EB%AC%B8-%EA%B2%B0%EC%A0%9C-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-%EB%B0%8F-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90)
+
       **TPS** : 평균 62% 개선
       <table>
       <tr>
@@ -104,12 +108,12 @@
 
   60,000건의 실제 커머스 상품 데이터 기반 상품명 검색 정확도 및 성능 향상
     - Offset → Cursor 기반 페이징 처리
-    - **Elastic Search**의 한글 검색 엔진 `nori`를 활용, 검색 정확도 개선 -> [ 테스트 결과 보기 ]
+    - **Elastic Search**의 한글 검색 엔진 `nori`를 활용, 검색 정확도 개선  → [ 🔗 페이지 바로가기 ](https://github.com/rustywhite404/madeBy/wiki/Elastic-search%EC%97%90%EC%84%9C-%ED%95%9C%EA%B8%80-%ED%98%95%ED%83%9C%EC%86%8C-%EB%8B%A8%EC%9C%84-%EA%B2%80%EC%83%89-%EC%84%A4%EC%A0%95)
     - 검색 엔진에 문제가 생겼을 경우 Caffeine 캐시를 통해 빠른 응답 제공          
       ⇒ TTL을 설정하여 데이터 신선도를 보장하고, **Window TinyLFU** 적용으로 인기 데이터 유지
 
     - 개선 결과 :  
-      각 개선점에 대한 상세 내용 및 상세 테스트 결과는 여기에서 확인하실 수 있습니다 → [ 페이지 바로가기 ]  
+      각 개선점에 대한 상세 내용 및 상세 테스트 결과 확인 → [ 🔗 페이지 바로가기 ](https://github.com/rustywhite404/madeBy/wiki/%EC%A3%BC%EC%9A%94-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-&-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90#2-%EC%83%81%ED%92%88-%EA%B2%80%EC%83%89-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-%EB%B0%8F-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90)   
       **TPS** : Elastic Search 적용 후 TPS 평균 23,504% 증가
       <table>
       <tr>
@@ -177,7 +181,7 @@
       ⇒ 모든 상품을 캐시에 저장하지 않고, 사용자가 자주 확인하는 1~10페이지의 데이터만 캐싱 처리하여 서버 자원을 효율적으로 사용
 
     - 개선 결과 :  
-      각 개선점에 대한 상세 내용 및 상세 테스트 결과는 여기에서 확인하실 수 있습니다 → [ 페이지 바로가기 ]  
+      각 개선점에 대한 상세 내용 및 상세 테스트 결과 확인 → [ 🔗 페이지 바로가기 ](https://github.com/rustywhite404/madeBy/wiki/%EC%A3%BC%EC%9A%94-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-&-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90#3-%EC%83%81%ED%92%88-%EC%A1%B0%ED%9A%8C-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-%EB%B0%8F-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90)    
       **TPS** : 약 `300%` 증가
       <table>
       <tr>
@@ -242,20 +246,11 @@
 - Elastic Search 형태소 검색 & 비정형 텍스트 검색 방식 결정
 - 내부 캐시 ehCache vs. Caffeine 기술 스택 결정
 
-
-
-
-## 📐 System Architecture
-![Structure](https://github.com/user-attachments/assets/5852e8eb-e9c4-4117-807b-1d6fac444f2a)
-
 ## ⏳ Sequence Diagram
 ![주문 결제 시퀀스 다이어그램](https://github.com/user-attachments/assets/1bdd3354-2e58-4358-9a95-3de544e0f0cc)
 
 ## 📜 산출물
-<a href="https://documenter.getpostman.com/view/22818248/2sAYJ3FhBW#intro" target="_blank">📂 API 명세서</a>  
-<a href="https://github.com/rustywhite404/madeBy/wiki/ERD" target="_blank">📂 ERD</a>  
-<a href="https://github.com/rustywhite404/madeBy/wiki/%ED%8F%B4%EB%8D%94-%EA%B5%AC%EC%A1%B0%EB%8F%84" target="_blank">📂 폴더 구조도</a>  
-<a href="https://github.com/rustywhite404/madeBy/wiki/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%99%98%EA%B2%BD-%EC%84%A4%EC%A0%95-%EB%B0%8F-%EC%8B%A4%ED%96%89-%EA%B0%80%EC%9D%B4%EB%93%9C" target="_blank">📂 프로젝트 환경 설정 및 실행 가이드</a>
-
-
-
+- [📂 API 명세서](https://documenter.getpostman.com/view/22818248/2sAYJ3FhBW#intro)
+- [📂 ERD](https://github.com/rustywhite404/madeBy/wiki/ERD)
+- [📂 폴더 구조도](https://github.com/rustywhite404/madeBy/wiki/%ED%8F%B4%EB%8D%94-%EA%B5%AC%EC%A1%B0%EB%8F%84)
+- [📂 프로젝트 환경 설정 및 실행 가이드](https://github.com/rustywhite404/madeBy/wiki/%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%ED%99%98%EA%B2%BD-%EC%84%A4%EC%A0%95-%EB%B0%8F-%EC%8B%A4%ED%96%89-%EA%B0%80%EC%9D%B4%EB%93%9C)  
