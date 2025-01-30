@@ -47,13 +47,13 @@
 
 
 ## 📐 System Architecture
-![Structure](https://github.com/user-attachments/assets/5852e8eb-e9c4-4117-807b-1d6fac444f2a)
+![Structure](https://i.imgur.com/v0xEVO2.jpeg)
 
 ## 🔗 ERD
 ![ERD](https://i.imgur.com/BgiP7ht.png)
 
 ## ⏳ Sequence Diagram
-![주문 결제 시퀀스 다이어그램](https://github.com/user-attachments/assets/1bdd3354-2e58-4358-9a95-3de544e0f0cc)
+![주문 결제 시퀀스 다이어그램](https://i.imgur.com/Bc10Ga7.png)
 
 
 ## 🔨 주요 구현 내용
@@ -81,45 +81,9 @@
   3. 높은 트래픽을 유발하는 한정 상품은 Redis에서 조회, 일반 상품은 Feign Client로 조회하도록 비즈니스 로직 설계 변경
   4. GC 사용량을 줄이기 위한 코드 개선
   - 개선 결과 :  
-    각 개선점에 대한 상세 내용 및 상세 테스트 결과 확인 → [ 🔗 페이지 바로가기 ](https://github.com/rustywhite404/madeBy/wiki/%EC%A3%BC%EC%9A%94-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-&-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90#1-%EC%A3%BC%EB%AC%B8-%EA%B2%B0%EC%A0%9C-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-%EB%B0%8F-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90)
-
-    **TPS** : 평균 62% 개선
-    <table>
-    <tr>
-    <th></th>
-    <th>Vuser 200명</th>
-    <th>Vuser 400명</th>
-      </tr>
-      <tr>
-          <td>개선 전</td>
-          <td>416.6</td>
-          <td>367.4</td>
-      </tr>
-      <tr class="highlight">
-          <td>개선 후</td>
-          <td>630.6</td>
-          <td>636.0</td>
-      </tr>
-    </table>
-
-    **Mean Test Time(Latency)** : 지연시간 평균 31% 감소
-      <table>
-      <tr>
-          <th></th>
-          <th>Vuser 200명</th>
-          <th>Vuser 300명</th>
-      </tr>
-      <tr>
-          <td>개선 전</td>
-          <td>445.50ms</td>
-          <td>769.66ms</td>
-      </tr>
-      <tr class="highlight">
-          <td>개선 </td>
-          <td>294.63ms</td>
-          <td>550.30ms</td>
-      </tr>
-    </table>  
+    각 개선점에 대한 상세 내용 및 상세 테스트 결과 확인 → [ 🔗 페이지 바로가기 ](https://github.com/rustywhite404/madeBy/wiki/%EC%A3%BC%EC%9A%94-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-&-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90#1-%EC%A3%BC%EB%AC%B8-%EA%B2%B0%EC%A0%9C-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-%EB%B0%8F-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90)  
+    <br/>
+    ![주문 결제 비교](https://i.imgur.com/WSXDLRF.png)
 
     **GC Count** :          
     (개선 전) 최대 4~5회 → (개선 후) 평균 2회 미만         
@@ -138,62 +102,9 @@
       ⇒ TTL을 설정하여 데이터 신선도를 보장하고, **Window TinyLFU** 적용으로 인기 데이터 유지
 
     - 개선 결과 :  
-      각 개선점에 대한 상세 내용 및 상세 테스트 결과 확인 → [ 🔗 페이지 바로가기 ](https://github.com/rustywhite404/madeBy/wiki/%EC%A3%BC%EC%9A%94-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-&-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90#2-%EC%83%81%ED%92%88-%EA%B2%80%EC%83%89-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-%EB%B0%8F-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90)   
-      **TPS** : Elastic Search 적용 후 TPS 평균 23,504% 증가
-      <table>
-      <tr>
-      <th></th>
-      <th>Vuser 100명</th>
-      <th>Vuser 200명</th>
-      <th>Vuser 300명</th>
-        </tr>
-        <tr>
-            <td>개선 전</td>
-            <td>17.2</td>
-            <td>16.9</td>
-            <td>13.4</td>
-        </tr>
-        <tr>
-            <td>Caffeine 적용</td>
-            <td>417.5</td>
-            <td>303.6</td>
-            <td>288.1</td>
-        </tr>
-        <tr class="highlight">
-            <td>Elastic Search 적용</td>
-            <td>4,049.3</td>
-            <td>3,656.6</td>
-            <td>3,434.9</td>
-        </tr>
-      </table>  
-
-      **Mean Test Time(Latency)** : Elastic Search 적용 후 지연시간 평균 99.07% 감소
-        <table>
-        <tr>
-            <th></th>
-            <th>Vuser 100명</th>
-            <th>Vuser 200명</th>
-            <th>Vuser 300명</th>
-        </tr>
-        <tr>
-            <td>개선 전</td>
-            <td>1,752.82ms</td>
-            <td>4,540.22ms</td>
-            <td>10,216.26ms</td>
-        </tr>
-        <tr>
-                <td>Caffeine 적용</td>
-                <td>229.69ms</td>
-                <td>573.00ms</td>
-                <td>897.28ms</td>
-            </tr>
-        <tr class="highlight">
-            <td>Elastic Search 적용</td>
-            <td>21.55ms</td>
-            <td>41.83ms</td>
-            <td>66.22ms</td>
-        </tr>
-      </table>  
+      각 개선점에 대한 상세 내용 및 상세 테스트 결과 확인 → [ 🔗 페이지 바로가기 ](https://github.com/rustywhite404/madeBy/wiki/%EC%A3%BC%EC%9A%94-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-&-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90#2-%EC%83%81%ED%92%88-%EA%B2%80%EC%83%89-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-%EB%B0%8F-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90)  
+      <br/>
+    ![검색 성능 비교](https://i.imgur.com/VdxMUgo.png)
 ---
 - **상품 조회 성능 개선**
 
@@ -206,51 +117,9 @@
       ⇒ 모든 상품을 캐시에 저장하지 않고, 사용자가 자주 확인하는 1~10페이지의 데이터만 캐싱 처리하여 서버 자원을 효율적으로 사용
 
     - 개선 결과 :  
-      각 개선점에 대한 상세 내용 및 상세 테스트 결과 확인 → [ 🔗 페이지 바로가기 ](https://github.com/rustywhite404/madeBy/wiki/%EC%A3%BC%EC%9A%94-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-&-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90#3-%EC%83%81%ED%92%88-%EC%A1%B0%ED%9A%8C-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-%EB%B0%8F-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90)    
-      **TPS** : 약 `300%` 증가
-      <table>
-      <tr>
-      <th></th>
-      <th>Vuser 200명</th>
-      <th>Vuser 400명</th>
-      <th>Vuser 1,000명</th>
-        </tr>
-        <tr>
-            <td>개선 전</td>
-            <td>843.2</td>
-            <td>744.8</td>
-            <td>534.3</td>
-        </tr>
-        <tr class="highlight">
-            <td>개선 후</td>
-            <td>2,651.0</td>
-            <td>2,435.0</td>
-            <td>1,876.0</td>
-        </tr>
-      </table>  
-
-      **Mean Test Time(Latency)** : 약 `80%` 감소
-        <table>
-        <tr>
-            <th></th>
-            <th>Vuser 200명</th>
-            <th>Vuser 400명</th>
-            <th>Vuser 1,000명</th>
-        </tr>
-        <tr>
-            <td>개선 전</td>
-            <td>224.39ms</td>
-            <td>492.37ms</td>
-            <td>1,499.98ms</td>
-        </tr>
-        <tr class="highlight">
-            <td>개선 후</td>
-            <td>64.15ms</td>
-            <td>92.95ms</td>
-            <td>383.36ms</td>
-        </tr>
-      </table>  
-
+      각 개선점에 대한 상세 내용 및 상세 테스트 결과 확인 → [ 🔗 페이지 바로가기 ](https://github.com/rustywhite404/madeBy/wiki/%EC%A3%BC%EC%9A%94-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-&-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90#3-%EC%83%81%ED%92%88-%EC%A1%B0%ED%9A%8C-%EC%84%B1%EB%8A%A5-%EA%B0%9C%EC%84%A0-%EB%82%B4%EC%97%AD-%EB%B0%8F-%ED%85%8C%EC%8A%A4%ED%8A%B8-%EC%A0%84%ED%9B%84-%EB%B9%84%EA%B5%90)      
+      <br />
+      ![조회 성능 비교](https://i.imgur.com/MyjwKH9.png)
 
 
 ## 🐞 트러블 슈팅
